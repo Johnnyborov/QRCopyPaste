@@ -5,7 +5,7 @@ using static QRSender.HelperFunctions;
 
 namespace QRSender
 {
-    public partial class MainWindow : Window, INotifyPropertyChanged
+    public partial class MainWindow : Window, INotifyPropertyChanged, IImageSourceHolder
     {
         private ImageSource _imageSource;
 
@@ -14,8 +14,11 @@ namespace QRSender
             get => this._imageSource;
             set
             {
-                this._imageSource = value;
-                OnPropertyChanged(nameof(ImageSource));
+                if (this._imageSource != value)
+                {
+                    this._imageSource = value;
+                    OnPropertyChanged(nameof(ImageSource));
+                }
             }
         }
 
@@ -64,8 +67,16 @@ namespace QRSender
 
         private void startScannerBtn_Click(object sender, RoutedEventArgs e)
         {
-            ScreenScanner.StartScanner();
+            ComplexScanner.StartScanner();
             MessageBox.Show("Scanner started.");
+        }
+
+        private async void createComplexMsgBtn_Click(object sender, RoutedEventArgs e)
+        {
+            string msg = "this is a complex message";
+
+            var encoder = new ComplexEncoder(this);
+            await encoder.CreateComplex(msg);
         }
     }
 }
