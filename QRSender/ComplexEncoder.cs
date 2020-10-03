@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System;
 using System.Threading.Tasks;
 using static QRSender.HelperFunctions;
 
@@ -7,6 +6,7 @@ namespace QRSender
 {
     public class ComplexEncoder
     {
+        private static bool _isRunning = false;
         private IImageSourceHolder _imageSourceHolder;
 
         public ComplexEncoder(IImageSourceHolder imageSourceHolder)
@@ -15,14 +15,19 @@ namespace QRSender
         }
 
 
-        public async Task CreateComplex(string msg)
+        public async Task SendData<TData>(TData data)
         {
-            var dataParts = SplitStringToChunks(msg, QRSenderSettings.ChunkSize).ToArray();
+            if (_isRunning)
+                throw new Exception("Data sending is already in progress.");
+            _isRunning = true;
 
-            await SendQRMessageSettingsAsync(dataParts);
-            await SendAllDataPartsAsync(dataParts);
+            var qrMessagesPackage = QRMessageCreator.CreateQRMessagesPackage(data);
+
+            await SendQRMessageSettingsAsync(qrMessagesPackage.QRSettingsMessage);
+            await SendAllDataPartsAsync(qrMessagesPackage.QRDataPartsMessages);
 
             this._imageSourceHolder.ImageSource = null; // Remove last DataPart QR from screen.
+            _isRunning = false;
         }
 
 
@@ -41,40 +46,12 @@ namespace QRSender
         }
 
 
-        private async Task SendQRMessageSettingsAsync(string[] dataParts)
+        private async Task SendQRMessageSettingsAsync(string settingsMessage)
         {
-            var numberOfParts = dataParts.Length;
-            var settings = numberOfParts.ToString();
-
-            var settingsWritableBitmap = EncodeToQR(settings);
+            var settingsWritableBitmap = EncodeToQR(settingsMessage);
             this._imageSourceHolder.ImageSource = settingsWritableBitmap;
 
             await Task.Delay(QRSenderSettings.SendDelayMilliseconds);
-        }
-
-
-        private static IEnumerable<string> SplitStringToChunks(string fullStr, int chunkSize)
-        {
-            var numberOfChunks =
-                fullStr.Length % chunkSize == 0
-                ? fullStr.Length / chunkSize
-                : fullStr.Length / chunkSize + 1;
-
-
-            var chunks =
-                Enumerable.Range(0, numberOfChunks)
-                .Select(chunkNum =>
-                {
-                    int substringSize =
-                        chunkNum * chunkSize + chunkSize > fullStr.Length
-                        ? fullStr.Length % chunkSize
-                        : chunkSize;
-
-                    return fullStr.Substring(chunkNum * chunkSize, substringSize);
-                });
-
-
-            return chunks;
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Media;
 using static QRSender.HelperFunctions;
@@ -36,27 +37,27 @@ namespace QRSender
 
 
 
-        private void testBtn_Click(object sender, RoutedEventArgs e)
+        private void TestBtn_Click(object sender, RoutedEventArgs e)
         {
             TestingShit.QREncodeDecode();
         }
 
 
-        private void encodeBtn_Click(object sender, RoutedEventArgs e)
+        private void EncodeBtn_Click(object sender, RoutedEventArgs e)
         {
-            string msg = "el contento";
+            var data = "el contento";
 
-            var writableBitmap = EncodeToQR(msg);
+            var writableBitmap = EncodeToQR(data);
             this.ImageSource = writableBitmap;
 
-            MessageBox.Show($"Encoded: {msg}");
+            MessageBox.Show($"Encoded: {data}");
         }
 
 
-        private void decodeBtn_Click(object sender, RoutedEventArgs e)
+        private void DecodeBtn_Click(object sender, RoutedEventArgs e)
         {
-            var bmp = CreateBitmapFromScreen();
-            var barcodeResult = DecodeFromQR(bmp);
+            var bitmap = CreateBitmapFromScreen();
+            var barcodeResult = DecodeFromQR(bitmap);
 
             if (barcodeResult != null)
                 MessageBox.Show($"Decoded: {barcodeResult.Text}");
@@ -65,20 +66,59 @@ namespace QRSender
         }
 
 
-        private void startScannerBtn_Click(object sender, RoutedEventArgs e)
+        private void StartScannerBtn_Click(object sender, RoutedEventArgs e)
         {
-            if (ComplexScanner.StartScanner(receivedMsg => MessageBox.Show($"Scanned: {receivedMsg}")))
+            if (ComplexScanner.StartScanner(receivedData => HandleReceivedData(receivedData), errorMsg => MessageBox.Show($"Error: {errorMsg}")))
                 MessageBox.Show("Scanner started.");
             else
                 MessageBox.Show("Scanner already running.");
         }
 
-        private async void createComplexMsgBtn_Click(object sender, RoutedEventArgs e)
-        {
-            string msg = "this is a complex message";
 
-            var encoder = new ComplexEncoder(this);
-            await encoder.CreateComplex(msg);
+        private static void HandleReceivedData(object receivedData)
+        {
+            string msg;
+
+            if (receivedData.GetType() == typeof(string))
+                msg = (string)receivedData;
+            else if (receivedData.GetType() == typeof(byte[]))
+                msg = ((byte[])receivedData)[4] == 253 ? "correct" : "incorrect";
+            else
+                throw new Exception($"Unsupported data type {receivedData.GetType()} in {nameof(HandleReceivedData)}.");
+
+            MessageBox.Show($"Scanned: {msg}");
+        }
+
+
+        private async void SendStringDataBtn_Click(object sender, RoutedEventArgs e)
+        {
+            var stringData = "this is a complex message";
+
+            try
+            {
+                var encoder = new ComplexEncoder(this);
+                await encoder.SendData(stringData);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error while sending: {ex.Message}");
+            }
+        }
+
+
+        private async void SendBinaryDataBtn_Click(object sender, RoutedEventArgs e)
+        {
+            var binaryData = new byte[] { 0, 1, 3, 66, 253, 255, 0, 254, 177, 222, 234 };
+
+            try
+            {
+                var encoder = new ComplexEncoder(this);
+                await encoder.SendData(binaryData);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error while sending: {ex.Message}");
+            }
         }
     }
 }

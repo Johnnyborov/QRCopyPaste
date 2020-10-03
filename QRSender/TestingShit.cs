@@ -10,9 +10,9 @@ namespace QRSender
     {
         public static void QREncodeDecode()
         {
-            string msg = "test msg";
+            string data = "test msg";
 
-            var writableBitmap = EncodeToQR(msg);
+            var writableBitmap = EncodeToQR(data);
             //var barcodeResult = barcodeReader.Decode(new BitmapSourceLuminanceSource(writableBitmap));
 
             var bmp = WritableBitmapToBitmap(writableBitmap);

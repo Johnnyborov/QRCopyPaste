@@ -2,6 +2,6 @@
 {
     public static class QRReceiverSettings
     {
-        public const int SendDelayMilliseconds = 50;
+        public const int ScanPeriodForSettingsMessageMilliseconds = 150;
     }
 }

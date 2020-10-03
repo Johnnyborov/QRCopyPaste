@@ -10,19 +10,19 @@ namespace QRSender
 {
     public static class HelperFunctions
     {
-        public static WriteableBitmap EncodeToQR(string msg)
+        public static WriteableBitmap EncodeToQR(string data)
         {
             var barcodeWriter = new BarcodeWriter();
             barcodeWriter.Format = BarcodeFormat.QR_CODE;
 
-            var writableBitmap = barcodeWriter.Write(msg);
+            var writableBitmap = barcodeWriter.Write(data);
             return writableBitmap;
         }
 
 
-        public static Result DecodeFromQR(Bitmap bmp)
+        public static Result DecodeFromQR(Bitmap bitmap)
         {
-            var luminanceSource = new BitmapSourceLuminanceSource(CreateBitmapSourceFromBitmap(bmp));
+            var luminanceSource = new BitmapSourceLuminanceSource(CreateBitmapSourceFromBitmap(bitmap));
 
             var barcodeReader = new ZXing.BarcodeReader();
             var barcodeResult = barcodeReader.Decode(luminanceSource);
@@ -40,6 +40,7 @@ namespace QRSender
             }
             return bitmap;
         }
+
 
         private static BitmapSource CreateBitmapSourceFromBitmap(Bitmap bitmap)
         {
