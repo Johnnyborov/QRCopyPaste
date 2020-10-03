@@ -46,7 +46,7 @@ namespace QRSender
             var writableBitmap = EncodeToQR(msg);
             this.ImageSource = writableBitmap;
 
-            MessageBox.Show($"{msg}");
+            MessageBox.Show($"Encoded: {msg}");
         }
 
 
@@ -55,7 +55,17 @@ namespace QRSender
             var bmp = CreateBitmapFromScreen();
             var barcodeResult = DecodeFromQR(bmp);
 
-            MessageBox.Show($"{barcodeResult.Text}");
+            if (barcodeResult != null)
+                MessageBox.Show($"Decoded: {barcodeResult.Text}");
+            else
+                MessageBox.Show($"No QR detected.");
+        }
+
+
+        private void startScannerBtn_Click(object sender, RoutedEventArgs e)
+        {
+            ScreenScanner.StartScanner();
+            MessageBox.Show("Scanner started.");
         }
     }
 }
