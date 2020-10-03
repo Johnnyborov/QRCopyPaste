@@ -35,8 +35,11 @@ namespace QRSender
 
         private static QRMessagesPackage CreateQRMessagesPackageFromString(string data, string dataType)
         {
-            var dataPartsMessages = SplitStringToChunks(data, QRSenderSettings.ChunkSize).ToArray();
-            var settingsMessage = CreateQRSettingsMessage(dataPartsMessages, dataType);
+            var dataParts = SplitStringToChunks(data, QRSenderSettings.ChunkSize).ToArray();
+            var dataPartsMessages = CreateQRDataPartsMessages(dataParts);
+
+            var dataHash = HelperFunctions.GetStringHash(data);
+            var settingsMessage = CreateQRSettingsMessage(dataPartsMessages, dataType, dataHash);
 
             var qrMessagesPackage = new QRMessagesPackage
             {
@@ -48,17 +51,38 @@ namespace QRSender
         }
 
 
-        private static string CreateQRSettingsMessage(string[] dataParts, string dataType)
+        private static string CreateQRSettingsMessage(string[] dataParts, string dataType, string dataHash)
         {
             var qrMessageSettings = new QRMessageSettings
             {
                 NumberOfParts = dataParts.Length,
                 SenderDelay = QRSenderSettings.SendDelayMilliseconds,
                 DataType = dataType,
+                DataHash = dataHash,
             };
 
             var settings = JsonSerializer.Serialize(qrMessageSettings);
             return settings;
+        }
+
+
+        private static string[] CreateQRDataPartsMessages(string[] dataParts)
+        {
+            var dataPartsMessages = new List<string>();
+
+            for (int i = 0; i < dataParts.Length; i++)
+            {
+                var qrDataPartsMessage = new QRDataPartMessage
+                {
+                    ID = i,
+                    Data = dataParts[i],
+                };
+
+                var dataPartsMessage = JsonSerializer.Serialize(qrDataPartsMessage);
+                dataPartsMessages.Add(dataPartsMessage);
+            }
+
+            return dataPartsMessages.ToArray();
         }
 
 

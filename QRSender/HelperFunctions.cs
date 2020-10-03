@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Security.Cryptography;
+using System.Text;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using ZXing;
@@ -10,6 +12,19 @@ namespace QRSender
 {
     public static class HelperFunctions
     {
+        public static string GetStringHash(string dataStr)
+        {
+            if (string.IsNullOrEmpty(dataStr))
+                return string.Empty;
+
+            var dataBytes = Encoding.UTF8.GetBytes(dataStr);
+            using var sha = new SHA256Managed();
+            var hashBytes = sha.ComputeHash(dataBytes);
+            var hashStr = BitConverter.ToString(hashBytes).Replace("-", string.Empty);
+            return hashStr;
+        }
+
+
         public static WriteableBitmap EncodeToQR(string data)
         {
             var barcodeWriter = new BarcodeWriter();

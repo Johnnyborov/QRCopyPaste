@@ -52,6 +52,11 @@ namespace QRSender
             var dataStrParts = await ScanAllDataStrPartsAsync(qrMessageSettings);
             var fullDataStr = string.Join("", dataStrParts.Values);
 
+            var dataHash = GetStringHash(fullDataStr);
+            if (dataHash != qrMessageSettings.DataHash)
+                throw new Exception("Received data is incorrect.");
+
+
             var fullData = ConvertToInitialTypeFromString(fullDataStr, qrMessageSettings.DataType);
             messageReceivedAction(fullData);
         }
@@ -72,17 +77,21 @@ namespace QRSender
         {
             var settingsResult = await WaitForSuccessfullyDecodedQRAsync(QRReceiverSettings.ScanPeriodForSettingsMessageMilliseconds, int.MaxValue);
             var settingsData = settingsResult.Text;
+            var qrMessageSettings = TryDeserialize<QRMessageSettings>(settingsData);
+            return qrMessageSettings;
+        }
 
+
+        private static TData TryDeserialize<TData>(string dataStr)
+        {
             try
             {
-                var qrMessageSettings = JsonSerializer.Deserialize<QRMessageSettings>(settingsData);
-                qrMessageSettings.ReceivedIDs = GetReceivedIDs(settingsData);
-
-                return qrMessageSettings;
+                var data = JsonSerializer.Deserialize<TData>(dataStr);
+                return data;
             }
-            catch (JsonException) // Was not a QRMessageSettings (or failed to deserialize for some other reason).
+            catch (JsonException)
             {
-                return null;
+                return default;
             }
         }
 
@@ -96,27 +105,29 @@ namespace QRSender
         }
 
 
-        private static async Task<Dictionary<string, string>> ScanAllDataStrPartsAsync(QRMessageSettings qrMessageSettings)
+        private static async Task<Dictionary<int, string>> ScanAllDataStrPartsAsync(QRMessageSettings qrMessageSettings)
         {
-            var dataParts = new Dictionary<string, string>();
+            var receivedIDs = new HashSet<int>();
+            var dataParts = new Dictionary<int, string>();
 
             var maxScanTime = qrMessageSettings.SenderDelay * (qrMessageSettings.NumberOfParts + 1);
             var stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            var receivedIDs = qrMessageSettings.ReceivedIDs;
             int currentPart = 0;
             while (currentPart < qrMessageSettings.NumberOfParts && stopwatch.ElapsedMilliseconds < maxScanTime)
             {
-                var delay = qrMessageSettings.SenderDelay * 2 / 3; // Scan has to be faster than the display time.
-                var dataPartResult = await WaitForSuccessfullyDecodedQRAsync(delay, 2);
-                var currentData = dataPartResult.Text;
-                var currentDataID = currentData;
+                var delay = qrMessageSettings.SenderDelay * 1 / 3; // Scan has to be faster than the display time.
+                var dataPartResult = await WaitForSuccessfullyDecodedQRAsync(delay, 5);
+                var currentDataStr = dataPartResult.Text;
+                var currentData = TryDeserialize<QRDataPartMessage>(currentDataStr);
+                if (currentData == null)
+                    continue; // Was not a QRDataPartMessage (or failed to deserialize for some other reason).
 
-                if (!receivedIDs.Contains(currentDataID))
+                if (!receivedIDs.Contains(currentData.ID))
                 {
-                    receivedIDs.Add(currentDataID);
-                    dataParts.Add(currentDataID, currentData);
+                    receivedIDs.Add(currentData.ID);
+                    dataParts.Add(currentData.ID, currentData.Data);
                     currentPart++;
                 }
             }
