@@ -67,8 +67,10 @@ namespace QRSender
 
         private void startScannerBtn_Click(object sender, RoutedEventArgs e)
         {
-            ComplexScanner.StartScanner();
-            MessageBox.Show("Scanner started.");
+            if (ComplexScanner.StartScanner(receivedMsg => MessageBox.Show($"Scanned: {receivedMsg}")))
+                MessageBox.Show("Scanner started.");
+            else
+                MessageBox.Show("Scanner already running.");
         }
 
         private async void createComplexMsgBtn_Click(object sender, RoutedEventArgs e)

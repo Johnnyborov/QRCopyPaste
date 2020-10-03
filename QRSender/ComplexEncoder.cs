@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows;
 using static QRSender.HelperFunctions;
 
 namespace QRSender
@@ -18,28 +17,39 @@ namespace QRSender
 
         public async Task CreateComplex(string msg)
         {
-            int chunkSize = 3;
-            var dataParts = SplitStringToChunks(msg, chunkSize).ToArray();
+            var dataParts = SplitStringToChunks(msg, QRSenderSettings.ChunkSize).ToArray();
 
+            await SendQRMessageSettingsAsync(dataParts);
+            await SendAllDataPartsAsync(dataParts);
+
+            this._imageSourceHolder.ImageSource = null; // Remove last DataPart QR from screen.
+        }
+
+
+        private async Task SendAllDataPartsAsync(string[] dataParts)
+        {
+            var numberOfParts = dataParts.Length;
+            for (int i = 0; i < numberOfParts; i++)
+            {
+                string dataPart = dataParts[i];
+
+                var dataPartWritableBitmap = EncodeToQR(dataPart);
+                this._imageSourceHolder.ImageSource = dataPartWritableBitmap;
+
+                await Task.Delay(QRSenderSettings.SendDelayMilliseconds);
+            }
+        }
+
+
+        private async Task SendQRMessageSettingsAsync(string[] dataParts)
+        {
             var numberOfParts = dataParts.Length;
             var settings = numberOfParts.ToString();
 
             var settingsWritableBitmap = EncodeToQR(settings);
             this._imageSourceHolder.ImageSource = settingsWritableBitmap;
-            await Task.Delay(250);
 
-            string fullData = "";
-            for (int i = 0; i < numberOfParts; i++)
-            {
-                string msgPart = dataParts[i];
-                var dataPartWritableBitmap = EncodeToQR(msgPart);
-                this._imageSourceHolder.ImageSource = dataPartWritableBitmap;
-                await Task.Delay(250);
-                fullData += msgPart;
-            }
-            MessageBox.Show($"Sent: {fullData}");
-
-            this._imageSourceHolder.ImageSource = null;
+            await Task.Delay(QRSenderSettings.SendDelayMilliseconds);
         }
 
 
