@@ -2,21 +2,20 @@
 using System.IO;
 using System.Windows;
 using System.Windows.Media.Imaging;
-using static QRCopyPaste.HelperFunctions;
 
 namespace QRCopyPaste
 {
-    public static class TestingShit
+    public static class TestingFunctions
     {
         public static void QREncodeDecode()
         {
             string data = "test msg";
 
-            var writableBitmap = EncodeToQR(data);
+            var writableBitmap = QRSenderHelper.CreateQRWritableBitampFromString(data);
             //var barcodeResult = barcodeReader.Decode(new BitmapSourceLuminanceSource(writableBitmap));
 
             var bmp = WritableBitmapToBitmap(writableBitmap);
-            var barcodeResult = DecodeFromQR(bmp);
+            var barcodeResult = QRMessageScannerHelper.GetBarcodeResultFromQRBitmap(bmp);
 
             MessageBox.Show($"{barcodeResult.Text}");
         }

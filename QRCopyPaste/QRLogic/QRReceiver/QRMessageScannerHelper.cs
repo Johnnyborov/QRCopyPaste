@@ -1,47 +1,25 @@
 ﻿using System;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.Security.Cryptography;
-using System.Text;
+using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using ZXing;
-using ZXing.Presentation;
-using ZXing.QrCode.Internal;
 
 namespace QRCopyPaste
 {
-    public static class HelperFunctions
+    public static class QRMessageScannerHelper
     {
-        public static string GetStringHash(string dataStr)
-        {
-            if (string.IsNullOrEmpty(dataStr))
-                return string.Empty;
-
-            var dataBytes = Encoding.UTF8.GetBytes(dataStr);
-            using var sha = new SHA256Managed();
-            var hashBytes = sha.ComputeHash(dataBytes);
-            var hashStr = BitConverter.ToString(hashBytes).Replace("-", string.Empty);
-            return hashStr;
-        }
+        private static readonly int _screenWidth = (int)SystemParameters.VirtualScreenWidth;
+        private static readonly int _screenHeight = (int)SystemParameters.VirtualScreenHeight;
+        private static readonly Bitmap _bitmap = new Bitmap(_screenWidth, _screenHeight);
 
 
-        public static WriteableBitmap EncodeToQR(string data)
-        {
-            var barcodeWriter = new BarcodeWriter();
-            barcodeWriter.Format = BarcodeFormat.QR_CODE;
-            barcodeWriter.Options.Hints.Add(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.L);
-
-            var writableBitmap = barcodeWriter.Write(data);
-            return writableBitmap;
-        }
-
-
-        public static Result DecodeFromQR(Bitmap bitmap)
+        public static Result GetBarcodeResultFromQRBitmap(Bitmap bitmap)
         {
             var luminanceSource = new BitmapSourceLuminanceSource(CreateBitmapSourceFromBitmap(bitmap));
 
-            var barcodeReader = new ZXing.BarcodeReader();
+            var barcodeReader = new BarcodeReader();
             var barcodeResult = barcodeReader.Decode(luminanceSource);
             return barcodeResult;
         }
@@ -49,13 +27,15 @@ namespace QRCopyPaste
 
         public static Bitmap CreateBitmapFromScreen()
         {
-            var bitmap = new Bitmap(1920, 1080);
-            using (var g = Graphics.FromImage(bitmap))
+            using (var g = Graphics.FromImage(_bitmap))
             {
-                g.CopyFromScreen(0, 0, 0, 0,
-                bitmap.Size, CopyPixelOperation.SourceCopy);
+                g.CopyFromScreen(
+                    0, 0, 0, 0,
+                    _bitmap.Size,
+                    CopyPixelOperation.SourceCopy
+                );
             }
-            return bitmap;
+            return _bitmap;
         }
 
 

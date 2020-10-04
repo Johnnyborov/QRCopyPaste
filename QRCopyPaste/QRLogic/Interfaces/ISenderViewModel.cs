@@ -2,7 +2,7 @@
 
 namespace QRCopyPaste
 {
-    public interface IImageSourceHolder
+    public interface ISenderViewModel
     {
         public ImageSource ImageSource { get; set; }
         public int SenderProgress { get; set; }

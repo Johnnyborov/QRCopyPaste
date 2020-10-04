@@ -1,8 +1,8 @@
 ﻿namespace QRCopyPaste
 {
-    public class QRMessagesPackage
+    public class QRPackage
     {
-        public string QRSettingsMessage { get; set; }
+        public string QRPackageInfoMessage { get; set; }
         public string[] QRDataPartsMessages { get; set; }
     }
 }

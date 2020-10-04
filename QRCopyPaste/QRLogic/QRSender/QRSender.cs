@@ -1,18 +1,17 @@
 ﻿using System;
 using System.Threading.Tasks;
-using static QRCopyPaste.HelperFunctions;
 
 namespace QRCopyPaste
 {
-    public class ComplexEncoder
+    public class QRSender
     {
         private static bool _stopRequested = false;
         private static bool _isRunning = false;
-        private IImageSourceHolder _imageSourceHolder;
+        private ISenderViewModel _senderViewModel;
 
-        public ComplexEncoder(IImageSourceHolder imageSourceHolder)
+        public QRSender(ISenderViewModel senderViewModel)
         {
-            this._imageSourceHolder = imageSourceHolder;
+            this._senderViewModel = senderViewModel;
         }
 
 
@@ -22,12 +21,12 @@ namespace QRCopyPaste
                 throw new Exception("Data sending is already in progress.");
             _isRunning = true;
 
-            var qrMessagesPackage = QRMessageCreator.CreateQRMessagesPackage(data);
+            var qrPackage = QRPackageCreator.CreateQRPackage(data);
 
-            await SendQRMessageSettingsAsync(qrMessagesPackage.QRSettingsMessage);
-            await SendAllDataPartsAsync(qrMessagesPackage.QRDataPartsMessages);
+            await SendQRMessageSettingsAsync(qrPackage.QRPackageInfoMessage);
+            await SendAllDataPartsAsync(qrPackage.QRDataPartsMessages);
 
-            this._imageSourceHolder.ImageSource = null; // Remove last DataPart QR from screen.
+            this._senderViewModel.ImageSource = null; // Remove last DataPart QR from screen.
             _isRunning = false;
             _stopRequested = false;
         }
@@ -41,7 +40,7 @@ namespace QRCopyPaste
 
         private async Task SendAllDataPartsAsync(string[] dataParts)
         {
-            this._imageSourceHolder.SenderProgress = 1;
+            this._senderViewModel.SenderProgress = 1;
 
             var numberOfParts = dataParts.Length;
             for (int i = 0; i < numberOfParts; i++)
@@ -51,20 +50,20 @@ namespace QRCopyPaste
 
                 string dataPart = dataParts[i];
 
-                var dataPartWritableBitmap = EncodeToQR(dataPart);
-                this._imageSourceHolder.ImageSource = dataPartWritableBitmap;
+                var dataPartWritableBitmap = QRSenderHelper.CreateQRWritableBitampFromString(dataPart);
+                this._senderViewModel.ImageSource = dataPartWritableBitmap;
 
                 await Task.Delay(QRSenderSettings.SendDelayMilliseconds);
 
-                this._imageSourceHolder.SenderProgress = 1 + 99 * (i + 1) / numberOfParts;
+                this._senderViewModel.SenderProgress = 1 + 99 * (i + 1) / numberOfParts;
             }
         }
 
 
         private async Task SendQRMessageSettingsAsync(string settingsMessage)
         {
-            var settingsWritableBitmap = EncodeToQR(settingsMessage);
-            this._imageSourceHolder.ImageSource = settingsWritableBitmap;
+            var settingsWritableBitmap = QRSenderHelper.CreateQRWritableBitampFromString(settingsMessage);
+            this._senderViewModel.ImageSource = settingsWritableBitmap;
 
             await Task.Delay(QRSenderSettings.SendDelayMilliseconds);
         }

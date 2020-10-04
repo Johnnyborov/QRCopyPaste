@@ -5,9 +5,9 @@ using System.Text.Json;
 
 namespace QRCopyPaste
 {
-    public static class QRMessageCreator
+    public static class QRPackageCreator
     {
-        public static QRMessagesPackage CreateQRMessagesPackage<TData>(TData data)
+        public static QRPackage CreateQRPackage<TData>(TData data)
         {
             string stringDataToSend;
             string dataType;
@@ -24,26 +24,26 @@ namespace QRCopyPaste
             }
             else
             {
-                throw new NotSupportedException($"Unsupported data type {data.GetType()} during {nameof(QRMessagesPackage)} creation.");
+                throw new NotSupportedException($"Unsupported data type {data.GetType()} during {nameof(QRPackage)} creation.");
             }
 
 
-            var qrMessagesPackage = CreateQRMessagesPackageFromString(stringDataToSend, dataType);
+            var qrMessagesPackage = CreateQRPackageFromString(stringDataToSend, dataType);
             return qrMessagesPackage;
         }
 
 
-        private static QRMessagesPackage CreateQRMessagesPackageFromString(string data, string dataType)
+        private static QRPackage CreateQRPackageFromString(string data, string dataType)
         {
             var dataParts = SplitStringToChunks(data, QRSenderSettings.ChunkSize).ToArray();
             var dataPartsMessages = CreateQRDataPartsMessages(dataParts);
 
-            var dataHash = HelperFunctions.GetStringHash(data);
+            var dataHash = HashHelper.GetStringHash(data);
             var settingsMessage = CreateQRSettingsMessage(dataPartsMessages, dataType, dataHash);
 
-            var qrMessagesPackage = new QRMessagesPackage
+            var qrMessagesPackage = new QRPackage
             {
-                QRSettingsMessage = settingsMessage,
+                QRPackageInfoMessage = settingsMessage,
                 QRDataPartsMessages = dataPartsMessages,
             };
 
@@ -53,17 +53,17 @@ namespace QRCopyPaste
 
         private static string CreateQRSettingsMessage(string[] dataParts, string dataType, string dataHash)
         {
-            var qrMessageSettings = new QRMessageSettings
+            var qrPackageInfoMessage = new QRPackageInfoMessage
             {
-                MsgIntegrity = Constants.QRSettingsMessageIntegrityCheckID,
+                MsgIntegrity = Constants.QRPackageInfoMessageIntegrityCheckID,
                 NumberOfParts = dataParts.Length,
                 SenderDelay = QRSenderSettings.SendDelayMilliseconds,
                 DataType = dataType,
                 DataHash = dataHash,
             };
 
-            var settings = JsonSerializer.Serialize(qrMessageSettings);
-            return settings;
+            var qrPackageInfoMessageStr = JsonSerializer.Serialize(qrPackageInfoMessage);
+            return qrPackageInfoMessageStr;
         }
 
 
@@ -78,11 +78,11 @@ namespace QRCopyPaste
                     MsgIntegrity = Constants.QRDataPartMessageIntegrityCheckID,
                     ID = i,
                     Data = dataParts[i],
-                    DataHash = HelperFunctions.GetStringHash(dataParts[i]),
+                    DataHash = HashHelper.GetStringHash(dataParts[i]),
                 };
 
-                var dataPartsMessage = JsonSerializer.Serialize(qrDataPartsMessage);
-                dataPartsMessages.Add(dataPartsMessage);
+                var qrDataPartsMessageStr = JsonSerializer.Serialize(qrDataPartsMessage);
+                dataPartsMessages.Add(qrDataPartsMessageStr);
             }
 
             return dataPartsMessages.ToArray();

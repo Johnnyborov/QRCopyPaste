@@ -8,8 +8,10 @@ using System.Windows.Media;
 
 namespace QRCopyPaste
 {
-    public partial class MainWindow : Window, INotifyPropertyChanged, IImageSourceHolder, IReceiverViewModel
+    public partial class MainWindow : Window, INotifyPropertyChanged, ISenderViewModel, IReceiverViewModel
     {
+        #region Fields
+
         private int _scanCycle;
         public int ScanCycle
         {
@@ -70,7 +72,9 @@ namespace QRCopyPaste
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
+        #endregion
 
+        #region Constructors
 
         public MainWindow()
         {
@@ -78,16 +82,17 @@ namespace QRCopyPaste
             DataContext = this;
         }
 
+        #endregion
 
-
+        #region Methods
 
         private void StartScannerBtn_Click(object sender, RoutedEventArgs e)
         {
-            var scanner = new ComplexScanner(this);
-            if (scanner.StartScanner(receivedData => HandleReceivedData(receivedData), errorMsg => MessageBox.Show($"Error: {errorMsg}")))
-                MessageBox.Show("Scanner started.");
+            var qrReceiver = new QRReceiver(this);
+            if (qrReceiver.StartScanning(receivedData => HandleReceivedData(receivedData), errorMsg => MessageBox.Show($"Error: {errorMsg}")))
+                MessageBox.Show("Scanning started.");
             else
-                MessageBox.Show("Scanner already running.");
+                MessageBox.Show("Scanning is already running.");
         }
 
 
@@ -95,12 +100,12 @@ namespace QRCopyPaste
         {
             if (receivedData.GetType() == typeof(string))
             {
-                Thread thread = new Thread(() => Clipboard.SetText($"blabla: {(string)receivedData}"));
+                Thread thread = new Thread(() => Clipboard.SetText((string)receivedData));
                 thread.SetApartmentState(ApartmentState.STA);
                 thread.Start();
                 thread.Join();
                 
-                MessageBox.Show($"Received and copied to clipboard text: {(string)receivedData}");
+                MessageBox.Show($"Data copied to clipboard.");
             }
             else if (receivedData.GetType() == typeof(byte[]))
             {
@@ -120,11 +125,17 @@ namespace QRCopyPaste
         private async void SendClipboardBtn_Click(object sender, RoutedEventArgs e)
         {
             var stringData = Clipboard.GetData(DataFormats.Text);
+            if (string.IsNullOrEmpty((string)stringData))
+            {
+                MessageBox.Show($"There is no text in clipboard right now.");
+                return;
+            }
+
 
             try
             {
-                var encoder = new ComplexEncoder(this);
-                await encoder.SendData(stringData);
+                var qrSender = new QRSender(this);
+                await qrSender.SendData(stringData);
             }
             catch (Exception ex)
             {
@@ -142,8 +153,8 @@ namespace QRCopyPaste
 
                 try
                 {
-                    var encoder = new ComplexEncoder(this);
-                    await encoder.SendData(binaryData);
+                    var qrSender = new QRSender(this);
+                    await qrSender.SendData(binaryData);
                 }
                 catch (Exception ex)
                 {
@@ -155,12 +166,14 @@ namespace QRCopyPaste
 
         private void StopSendingBtn_Click(object sender, RoutedEventArgs e)
         {
-            ComplexEncoder.RequestStop();
+            QRSender.RequestStop();
         }
 
         private void ClearCacheBtn_Click(object sender, RoutedEventArgs e)
         {
-            ComplexScanner.ClearItems();
+            QRReceiver.ClearCache();
         }
+
+        #endregion
     }
 }

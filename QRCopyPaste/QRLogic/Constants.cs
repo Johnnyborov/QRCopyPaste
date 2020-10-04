@@ -2,7 +2,7 @@
 {
     public static class Constants
     {
-        public const string QRSettingsMessageIntegrityCheckID = "ImCMPNWxUa";
+        public const string QRPackageInfoMessageIntegrityCheckID = "ImCMPNWxUa";
         public const string QRDataPartMessageIntegrityCheckID = "Ll49e8nyli";
 
         public const string StringTypeName = "string";
