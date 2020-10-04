@@ -1,8 +1,10 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.ComponentModel;
+using System.IO;
+using System.Threading;
 using System.Windows;
 using System.Windows.Media;
-using static QRSender.HelperFunctions;
 
 namespace QRSender
 {
@@ -22,16 +24,30 @@ namespace QRSender
             }
         }
 
-        private int _progress;
-        public int Progress
+        private int _receiverProgress;
+        public int ReceiverProgress
         {
-            get => this._progress;
+            get => this._receiverProgress;
             set
             {
-                if (this._progress != value)
+                if (this._receiverProgress != value)
                 {
-                    this._progress = value;
-                    OnPropertyChanged(nameof(Progress));
+                    this._receiverProgress = value;
+                    OnPropertyChanged(nameof(ReceiverProgress));
+                }
+            }
+        }
+
+        private int _senderProgress;
+        public int SenderProgress
+        {
+            get => this._senderProgress;
+            set
+            {
+                if (this._senderProgress != value)
+                {
+                    this._senderProgress = value;
+                    OnPropertyChanged(nameof(SenderProgress));
                 }
             }
         }
@@ -64,34 +80,6 @@ namespace QRSender
 
 
 
-        private void TestBtn_Click(object sender, RoutedEventArgs e)
-        {
-            TestingShit.QREncodeDecode();
-        }
-
-
-        private void EncodeBtn_Click(object sender, RoutedEventArgs e)
-        {
-            var data = "el contento";
-
-            var writableBitmap = EncodeToQR(data);
-            this.ImageSource = writableBitmap;
-
-            MessageBox.Show($"Encoded: {data}");
-        }
-
-
-        private void DecodeBtn_Click(object sender, RoutedEventArgs e)
-        {
-            var bitmap = CreateBitmapFromScreen();
-            var barcodeResult = DecodeFromQR(bitmap);
-
-            if (barcodeResult != null)
-                MessageBox.Show($"Decoded: {barcodeResult.Text}");
-            else
-                MessageBox.Show($"No QR detected.");
-        }
-
 
         private void StartScannerBtn_Click(object sender, RoutedEventArgs e)
         {
@@ -105,22 +93,33 @@ namespace QRSender
 
         private static void HandleReceivedData(object receivedData)
         {
-            string msg;
-
             if (receivedData.GetType() == typeof(string))
-                msg = (string)receivedData;
+            {
+                Thread thread = new Thread(() => Clipboard.SetText($"blabla: {(string)receivedData}"));
+                thread.SetApartmentState(ApartmentState.STA);
+                thread.Start();
+                thread.Join();
+                
+                MessageBox.Show($"Received and copied to clipboard text: {(string)receivedData}");
+            }
             else if (receivedData.GetType() == typeof(byte[]))
-            { msg = ((byte[])receivedData)[4] == 253 ? "correct" : "incorrect"; System.IO.File.WriteAllBytes("2QRSender.pdb", (byte[])receivedData); }
+            {
+                var saveFileDialog = new SaveFileDialog();
+                if (saveFileDialog.ShowDialog() == true)
+                {
+                    File.WriteAllBytes(saveFileDialog.FileName, (byte[])receivedData);
+                }
+            }
             else
+            {
                 throw new Exception($"Unsupported data type {receivedData.GetType()} in {nameof(HandleReceivedData)}.");
-
-            MessageBox.Show($"Scanned: {msg}");
+            }
         }
 
 
-        private async void SendStringDataBtn_Click(object sender, RoutedEventArgs e)
+        private async void SendClipboardBtn_Click(object sender, RoutedEventArgs e)
         {
-            var stringData = "this is a complex message";
+            var stringData = Clipboard.GetData(DataFormats.Text);
 
             try
             {
@@ -129,24 +128,27 @@ namespace QRSender
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error while sending: {ex.Message}");
+                MessageBox.Show($"Error while sending clipboard text: {ex.Message}");
             }
         }
 
 
-        private async void SendBinaryDataBtn_Click(object sender, RoutedEventArgs e)
+        private async void SendFileBtn_Click(object sender, RoutedEventArgs e)
         {
-            //var binaryData = new byte[] { 0, 1, 3, 66, 253, 255, 0, 254, 177, 222, 234 };
-            var binaryData = System.IO.File.ReadAllBytes("QRSender.pdb");
+            var openFileDialog = new OpenFileDialog();
+            if (openFileDialog.ShowDialog() == true)
+            {
+                var binaryData = File.ReadAllBytes(openFileDialog.FileName);
 
-            try
-            {
-                var encoder = new ComplexEncoder(this);
-                await encoder.SendData(binaryData);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error while sending: {ex.Message}");
+                try
+                {
+                    var encoder = new ComplexEncoder(this);
+                    await encoder.SendData(binaryData);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error while sending file: {ex.Message}");
+                }
             }
         }
 
@@ -156,7 +158,7 @@ namespace QRSender
             ComplexEncoder.RequestStop();
         }
 
-        private void ClearItemsBtn_Click(object sender, RoutedEventArgs e)
+        private void ClearCacheBtn_Click(object sender, RoutedEventArgs e)
         {
             ComplexScanner.ClearItems();
         }

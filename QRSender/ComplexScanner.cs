@@ -43,7 +43,7 @@ namespace QRSender
         public static void ClearItems()
         {
             _receivedItems.Clear();
-            _receiverViewModel.Progress = 0;
+            _receiverViewModel.ReceiverProgress = 0;
         }
 
 
@@ -71,7 +71,7 @@ namespace QRSender
 
             _scanCycle++;
             _receiverViewModel.ScanCycle = _scanCycle;
-            _receiverViewModel.Progress = 1;
+            _receiverViewModel.ReceiverProgress = 1;
             var dataStrParts = await ScanAllDataStrPartsAsync(qrMessageSettings);
             var fullDataStr = string.Join("", dataStrParts.ToList().OrderBy(p => p.Key).Select(p => p.Value));
 
@@ -132,7 +132,7 @@ namespace QRSender
                 _receivedItems.Add(qrMessageSettings.DataHash, new Dictionary<int, string>());
  
             var dataParts = _receivedItems[qrMessageSettings.DataHash];
-            _receiverViewModel.Progress = 1 + 99 * dataParts.Count / qrMessageSettings.NumberOfParts;
+            _receiverViewModel.ReceiverProgress = 1 + 99 * dataParts.Count / qrMessageSettings.NumberOfParts;
 
             var maxScanTime = qrMessageSettings.SenderDelay * (qrMessageSettings.NumberOfParts + 1) * 3 / 2;
             var stopwatch = new Stopwatch();
@@ -157,7 +157,7 @@ namespace QRSender
                 {
                     dataParts.Add(currentData.ID, currentData.Data);
                 }
-                _receiverViewModel.Progress = 1 + 99 * dataParts.Count / qrMessageSettings.NumberOfParts;
+                _receiverViewModel.ReceiverProgress = 1 + 99 * dataParts.Count / qrMessageSettings.NumberOfParts;
             }
 
             return dataParts;

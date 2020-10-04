@@ -41,6 +41,8 @@ namespace QRSender
 
         private async Task SendAllDataPartsAsync(string[] dataParts)
         {
+            this._imageSourceHolder.SenderProgress = 1;
+
             var numberOfParts = dataParts.Length;
             for (int i = 0; i < numberOfParts; i++)
             {
@@ -53,6 +55,8 @@ namespace QRSender
                 this._imageSourceHolder.ImageSource = dataPartWritableBitmap;
 
                 await Task.Delay(QRSenderSettings.SendDelayMilliseconds);
+
+                this._imageSourceHolder.SenderProgress = 1 + 99 * (i + 1) / numberOfParts;
             }
         }
 
