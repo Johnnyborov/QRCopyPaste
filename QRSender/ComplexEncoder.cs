@@ -6,6 +6,7 @@ namespace QRSender
 {
     public class ComplexEncoder
     {
+        private static bool _stopRequested = false;
         private static bool _isRunning = false;
         private IImageSourceHolder _imageSourceHolder;
 
@@ -28,6 +29,13 @@ namespace QRSender
 
             this._imageSourceHolder.ImageSource = null; // Remove last DataPart QR from screen.
             _isRunning = false;
+            _stopRequested = false;
+        }
+
+
+        public static void RequestStop()
+        {
+            _stopRequested = true;
         }
 
 
@@ -36,6 +44,9 @@ namespace QRSender
             var numberOfParts = dataParts.Length;
             for (int i = 0; i < numberOfParts; i++)
             {
+                if (_stopRequested)
+                    return;
+
                 string dataPart = dataParts[i];
 
                 var dataPartWritableBitmap = EncodeToQR(dataPart);

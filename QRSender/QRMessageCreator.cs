@@ -15,12 +15,12 @@ namespace QRSender
             if (data is string dataStr)
             {
                 stringDataToSend = dataStr;
-                dataType = "string";
+                dataType = Constants.StringTypeName;
             }
             else if (data is byte[] dataBytes)
             {
                 stringDataToSend = Convert.ToBase64String(dataBytes);
-                dataType = "byte[]";
+                dataType = Constants.ByteArrayTypeName;
             }
             else
             {
@@ -55,6 +55,7 @@ namespace QRSender
         {
             var qrMessageSettings = new QRMessageSettings
             {
+                MsgIntegrity = Constants.QRSettingsMessageIntegrityCheckID,
                 NumberOfParts = dataParts.Length,
                 SenderDelay = QRSenderSettings.SendDelayMilliseconds,
                 DataType = dataType,
@@ -74,6 +75,7 @@ namespace QRSender
             {
                 var qrDataPartsMessage = new QRDataPartMessage
                 {
+                    MsgIntegrity = Constants.QRDataPartMessageIntegrityCheckID,
                     ID = i,
                     Data = dataParts[i],
                 };

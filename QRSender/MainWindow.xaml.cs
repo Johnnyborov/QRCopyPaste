@@ -82,7 +82,7 @@ namespace QRSender
             if (receivedData.GetType() == typeof(string))
                 msg = (string)receivedData;
             else if (receivedData.GetType() == typeof(byte[]))
-                msg = ((byte[])receivedData)[4] == 253 ? "correct" : "incorrect";
+            { msg = ((byte[])receivedData)[4] == 253 ? "correct" : "incorrect"; System.IO.File.WriteAllBytes("2QRSender.dll", (byte[])receivedData); }
             else
                 throw new Exception($"Unsupported data type {receivedData.GetType()} in {nameof(HandleReceivedData)}.");
 
@@ -108,7 +108,8 @@ namespace QRSender
 
         private async void SendBinaryDataBtn_Click(object sender, RoutedEventArgs e)
         {
-            var binaryData = new byte[] { 0, 1, 3, 66, 253, 255, 0, 254, 177, 222, 234 };
+            //var binaryData = new byte[] { 0, 1, 3, 66, 253, 255, 0, 254, 177, 222, 234 };
+            var binaryData = System.IO.File.ReadAllBytes("QRSender.dll");
 
             try
             {
@@ -119,6 +120,12 @@ namespace QRSender
             {
                 MessageBox.Show($"Error while sending: {ex.Message}");
             }
+        }
+
+
+        private void StopSendingBtn_Click(object sender, RoutedEventArgs e)
+        {
+            ComplexEncoder.RequestStop();
         }
     }
 }

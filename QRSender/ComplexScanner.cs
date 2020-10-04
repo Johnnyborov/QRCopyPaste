@@ -46,7 +46,7 @@ namespace QRSender
         private static async Task ScanForFullMessageAsync(Action<object> messageReceivedAction)
         {
             var qrMessageSettings = await ScanQRMessageSettingsAsync();
-            if (qrMessageSettings == null)
+            if (qrMessageSettings == null || qrMessageSettings.MsgIntegrity != Constants.QRSettingsMessageIntegrityCheckID)
                 return; // Was not a QRMessageSettings (or failed to deserialize for some other reason).
 
             var dataStrParts = await ScanAllDataStrPartsAsync(qrMessageSettings);
@@ -64,9 +64,9 @@ namespace QRSender
 
         private static object ConvertToInitialTypeFromString(string dataStr, string dataType)
         {
-            if (dataType == "string")
+            if (dataType == Constants.StringTypeName)
                 return dataStr;
-            else if (dataType == "byte[]")
+            else if (dataType == Constants.ByteArrayTypeName)
                 return Convert.FromBase64String(dataStr);
             else
                 throw new Exception($"Unsupported data type {dataType} in {nameof(ConvertToInitialTypeFromString)}.");
@@ -121,7 +121,7 @@ namespace QRSender
                 var dataPartResult = await WaitForSuccessfullyDecodedQRAsync(delay, 5);
                 var currentDataStr = dataPartResult.Text;
                 var currentData = TryDeserialize<QRDataPartMessage>(currentDataStr);
-                if (currentData == null)
+                if (currentData == null || currentData.MsgIntegrity != Constants.QRDataPartMessageIntegrityCheckID)
                     continue; // Was not a QRDataPartMessage (or failed to deserialize for some other reason).
 
                 if (!receivedIDs.Contains(currentData.ID))
