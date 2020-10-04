@@ -2,7 +2,7 @@
 {
     public static class QRSenderSettings
     {
-        public const int ChunkSize = 450;
-        public const int SendDelayMilliseconds = 250;
+        public static int ChunkSize = 450;
+        public static int SendDelayMilliseconds = 250;
     }
 }

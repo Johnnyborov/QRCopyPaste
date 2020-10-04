@@ -2,7 +2,7 @@
 {
     public static class QRReceiverSettings
     {
-        public const int ScanPeriodForSettingsMessageMilliseconds = 100;
-        public const int MaxMillisecondsToContinueSinceLastSuccessfulQRRead = 1000;
+        public static int ScanPeriodForSettingsMessageMilliseconds = 100;
+        public static int MaxMillisecondsToContinueSinceLastSuccessfulQRRead = 1000;
     }
 }
