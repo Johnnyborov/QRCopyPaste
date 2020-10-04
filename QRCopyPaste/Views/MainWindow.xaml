@@ -62,6 +62,6 @@
         <Button Grid.Column="3" Grid.Row="3" Click="StopSendingBtn_Click" Content="StopSending" />
         <Button Grid.Column="3" Grid.Row="4" Click="ClearCacheBtn_Click" Content="ClearCache" />
         <Button Grid.Column="3" Grid.Row="5" Click="ResendLastBtn_Click" Content="ResendLast" />
-        <TextBox Grid.Column="3" Grid.Row="6" Grid.RowSpan="2" Name="ResendIDsTextBox" />
+        <TextBox Grid.Column="3" Grid.Row="6" Grid.RowSpan="2" Name="ResendIDsTextBox" TextWrapping="Wrap" />
     </Grid>
 </Window>

@@ -87,26 +87,28 @@ namespace QRCopyPaste
 
         #region Methods
 
-        private void StartScanningBtn_Click(object sender, RoutedEventArgs e)
+        private void ShowMessage(string msg)
         {
-            var qrReceiver = new QRReceiver(this);
-            if (qrReceiver.StartScanning(receivedData => HandleReceivedData(receivedData), errorMsg => MessageBox.Show($"Error: {errorMsg}")))
-                MessageBox.Show("Scanning started.");
-            else
-                MessageBox.Show("Scanning is already running.");
+            Dispatcher.Invoke(() => MsgBoxWindow.Show(this, msg, "", MsgBoxWindow.MessageBoxButtons.Ok));
         }
 
 
-        private static void HandleReceivedData(object receivedData)
+        private void StartScanningBtn_Click(object sender, RoutedEventArgs e)
+        {
+            var qrReceiver = new QRReceiver(this);
+            if (qrReceiver.StartScanning(receivedData => HandleReceivedData(receivedData), errorMsg => this.ShowMessage($"Error: {errorMsg}")))
+                this.ShowMessage("Scanning started.");
+            else
+                this.ShowMessage("Scanning is already running.");
+        }
+
+
+        private void HandleReceivedData(object receivedData)
         {
             if (receivedData.GetType() == typeof(string))
             {
-                Thread thread = new Thread(() => Clipboard.SetText((string)receivedData));
-                thread.SetApartmentState(ApartmentState.STA);
-                thread.Start();
-                thread.Join();
-                
-                MessageBox.Show($"Data copied to clipboard.");
+                Dispatcher.Invoke(() => Clipboard.SetText((string)receivedData));
+                this.ShowMessage($"Data copied to clipboard.");
             }
             else if (receivedData.GetType() == typeof(byte[]))
             {
@@ -128,7 +130,7 @@ namespace QRCopyPaste
             var stringData = Clipboard.GetData(DataFormats.Text);
             if (string.IsNullOrEmpty((string)stringData))
             {
-                MessageBox.Show($"There is no text in clipboard right now.");
+                this.ShowMessage($"There is no text in clipboard right now.");
                 return;
             }
 
@@ -140,7 +142,7 @@ namespace QRCopyPaste
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error while sending clipboard text: {ex.Message}");
+                this.ShowMessage($"Error while sending clipboard text: {ex.Message}");
             }
         }
 
@@ -159,7 +161,7 @@ namespace QRCopyPaste
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Error while sending file: {ex.Message}");
+                    this.ShowMessage($"Error while sending file: {ex.Message}");
                 }
             }
         }
@@ -191,7 +193,7 @@ namespace QRCopyPaste
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error while resending: {ex.Message}");
+                this.ShowMessage($"Error while resending: {ex.Message}");
             }
         }
 
