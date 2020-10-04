@@ -1,4 +1,4 @@
-﻿namespace QRSender
+﻿namespace QRCopyPaste
 {
     public interface IReceiverViewModel
     {

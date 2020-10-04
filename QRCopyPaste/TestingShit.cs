@@ -2,9 +2,9 @@
 using System.IO;
 using System.Windows;
 using System.Windows.Media.Imaging;
-using static QRSender.HelperFunctions;
+using static QRCopyPaste.HelperFunctions;
 
-namespace QRSender
+namespace QRCopyPaste
 {
     public static class TestingShit
     {

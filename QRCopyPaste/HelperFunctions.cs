@@ -9,7 +9,7 @@ using ZXing;
 using ZXing.Presentation;
 using ZXing.QrCode.Internal;
 
-namespace QRSender
+namespace QRCopyPaste
 {
     public static class HelperFunctions
     {

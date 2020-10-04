@@ -1,9 +1,9 @@
 ﻿using System.Threading.Tasks;
 using System.Windows;
 using ZXing;
-using static QRSender.HelperFunctions;
+using static QRCopyPaste.HelperFunctions;
 
-namespace QRSender
+namespace QRCopyPaste
 {
     public static class ScreenScanner
     {

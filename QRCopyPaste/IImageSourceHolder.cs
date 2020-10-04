@@ -1,6 +1,6 @@
 ﻿using System.Windows.Media;
 
-namespace QRSender
+namespace QRCopyPaste
 {
     public interface IImageSourceHolder
     {

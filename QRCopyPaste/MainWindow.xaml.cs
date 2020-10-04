@@ -6,7 +6,7 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Media;
 
-namespace QRSender
+namespace QRCopyPaste
 {
     public partial class MainWindow : Window, INotifyPropertyChanged, IImageSourceHolder, IReceiverViewModel
     {

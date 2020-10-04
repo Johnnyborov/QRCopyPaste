@@ -5,9 +5,9 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using ZXing;
-using static QRSender.HelperFunctions;
+using static QRCopyPaste.HelperFunctions;
 
-namespace QRSender
+namespace QRCopyPaste
 {
     public class ComplexScanner
     {

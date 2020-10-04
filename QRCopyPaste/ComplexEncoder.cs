@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
-using static QRSender.HelperFunctions;
+using static QRCopyPaste.HelperFunctions;
 
-namespace QRSender
+namespace QRCopyPaste
 {
     public class ComplexEncoder
     {
