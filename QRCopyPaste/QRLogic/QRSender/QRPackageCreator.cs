@@ -1,6 +1,9 @@
-﻿using System;
+﻿using ICSharpCode.SharpZipLib.GZip;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.Json;
 
 namespace QRCopyPaste
@@ -9,17 +12,18 @@ namespace QRCopyPaste
     {
         public static QRPackage CreateQRPackage<TData>(TData data)
         {
-            string stringDataToSend;
+            string zippedStringDataToSend;
             string dataType;
 
-            if (data is string dataStr)
+            if (data is string unzippedDataStr)
             {
-                stringDataToSend = dataStr;
+                var unzippedDataBytes = Encoding.UTF8.GetBytes(unzippedDataStr);
+                zippedStringDataToSend = GetZippedStringDataToSend(unzippedDataBytes);
                 dataType = Constants.StringTypeName;
             }
-            else if (data is byte[] dataBytes)
+            else if (data is byte[] unzippedDataBytes)
             {
-                stringDataToSend = Convert.ToBase64String(dataBytes);
+                zippedStringDataToSend = GetZippedStringDataToSend(unzippedDataBytes);
                 dataType = Constants.ByteArrayTypeName;
             }
             else
@@ -28,8 +32,20 @@ namespace QRCopyPaste
             }
 
 
-            var qrMessagesPackage = CreateQRPackageFromString(stringDataToSend, dataType);
+            var qrMessagesPackage = CreateQRPackageFromString(zippedStringDataToSend, dataType);
             return qrMessagesPackage;
+        }
+
+
+        private static string GetZippedStringDataToSend(byte[] unzippedDataBytes)
+        {
+            var unzippedDataBytesStream = new MemoryStream(unzippedDataBytes);
+            var zippedDataBytesStream = new MemoryStream();
+            GZip.Compress(unzippedDataBytesStream, zippedDataBytesStream, true, 4096, 9);
+
+            var zippedDataBytes = zippedDataBytesStream.ToArray();
+            var zippedStringDataToSend = Convert.ToBase64String(zippedDataBytes);
+            return zippedStringDataToSend;
         }
 
 
@@ -81,8 +97,8 @@ namespace QRCopyPaste
                     DataHash = HashHelper.GetStringHash(dataParts[i]),
                 };
 
-                var qrDataPartsMessageStr = JsonSerializer.Serialize(qrDataPartsMessage);
-                dataPartsMessages.Add(qrDataPartsMessageStr);
+                var dataPartsMessage = JsonSerializer.Serialize(qrDataPartsMessage);
+                dataPartsMessages.Add(dataPartsMessage);
             }
 
             return dataPartsMessages.ToArray();

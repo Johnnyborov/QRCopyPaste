@@ -1,7 +1,10 @@
-﻿using System;
+﻿using ICSharpCode.SharpZipLib.GZip;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace QRCopyPaste
@@ -113,14 +116,34 @@ namespace QRCopyPaste
         }
 
 
-        private static object ConvertToInitialTypeFromString(string dataStr, string dataType)
+        private static object ConvertToInitialTypeFromString(string zippedDataStr, string dataType)
         {
             if (dataType == Constants.StringTypeName)
-                return dataStr;
+            {
+                var unzippedDataBytes = GetUnzippedDataBytes(zippedDataStr);
+                var unzippedDataStr = Encoding.UTF8.GetString(unzippedDataBytes);
+                return unzippedDataStr;
+            }
             else if (dataType == Constants.ByteArrayTypeName)
-                return Convert.FromBase64String(dataStr);
+            {
+                var unzippedDataBytes = GetUnzippedDataBytes(zippedDataStr);
+                return unzippedDataBytes;
+            }
             else
+            {
                 throw new Exception($"Unsupported data type {dataType} in {nameof(ConvertToInitialTypeFromString)}.");
+            }
+        }
+
+
+        private static byte[] GetUnzippedDataBytes(string zippedDataStr)
+        {
+            var zippedDataBytesStream = new MemoryStream(Convert.FromBase64String(zippedDataStr));
+            var unzippedDataBytesStream = new MemoryStream();
+            GZip.Decompress(zippedDataBytesStream, unzippedDataBytesStream, true);
+
+            var unzippedDataBytes = unzippedDataBytesStream.ToArray();
+            return unzippedDataBytes;
         }
     }
 }
