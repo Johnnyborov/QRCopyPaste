@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:QRSender"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="800" Width="800" WindowStartupLocation="CenterScreen">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1*" />
@@ -21,9 +21,15 @@
             <RowDefinition Height="1*" />
             <RowDefinition Height="1*" />
             <RowDefinition Height="1*" />
+            <RowDefinition Height="1*" />
         </Grid.RowDefinitions>
-        
-        <Image Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="3" Grid.RowSpan="6" Source="{Binding ImageSource}" />
+
+        <TextBlock Grid.Column="0" Grid.Row="6" Grid.ColumnSpan="1" Text="{Binding Progress}" />
+        <TextBlock Grid.Column="1" Grid.Row="6" Grid.ColumnSpan="1" Text="{Binding ScanCycle}" />
+        <ProgressBar Grid.Column="0" Grid.Row="7" Grid.ColumnSpan="3" Value="{Binding Progress}" />
+
+        <Image Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="3" Grid.RowSpan="6" Source="{Binding ImageSource}"
+               RenderOptions.BitmapScalingMode="Fant" Stretch="Uniform" Margin="0" />
 
         <Button Grid.Column="3" Grid.Row="0" Click="TestBtn_Click" Content="Test" />
         <Button Grid.Column="3" Grid.Row="1" Click="EncodeBtn_Click" Content="Encode" />
@@ -32,5 +38,6 @@
         <Button Grid.Column="3" Grid.Row="4" Click="SendStringDataBtn_Click" Content="SendStringData" />
         <Button Grid.Column="3" Grid.Row="5" Click="SendBinaryDataBtn_Click" Content="SendBinaryData" />
         <Button Grid.Column="3" Grid.Row="6" Click="StopSendingBtn_Click" Content="StopSending" />
+        <Button Grid.Column="3" Grid.Row="7" Click="ClearItemsBtn_Click" Content="ClearItems" />
     </Grid>
 </Window>

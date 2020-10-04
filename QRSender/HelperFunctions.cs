@@ -7,6 +7,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using ZXing;
 using ZXing.Presentation;
+using ZXing.QrCode.Internal;
 
 namespace QRSender
 {
@@ -29,6 +30,7 @@ namespace QRSender
         {
             var barcodeWriter = new BarcodeWriter();
             barcodeWriter.Format = BarcodeFormat.QR_CODE;
+            barcodeWriter.Options.Hints.Add(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H);
 
             var writableBitmap = barcodeWriter.Write(data);
             return writableBitmap;

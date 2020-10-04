@@ -6,10 +6,37 @@ using static QRSender.HelperFunctions;
 
 namespace QRSender
 {
-    public partial class MainWindow : Window, INotifyPropertyChanged, IImageSourceHolder
+    public partial class MainWindow : Window, INotifyPropertyChanged, IImageSourceHolder, IReceiverViewModel
     {
-        private ImageSource _imageSource;
+        private int _scanCycle;
+        public int ScanCycle
+        {
+            get => this._scanCycle;
+            set
+            {
+                if (this._scanCycle != value)
+                {
+                    this._scanCycle = value;
+                    OnPropertyChanged(nameof(ScanCycle));
+                }
+            }
+        }
 
+        private int _progress;
+        public int Progress
+        {
+            get => this._progress;
+            set
+            {
+                if (this._progress != value)
+                {
+                    this._progress = value;
+                    OnPropertyChanged(nameof(Progress));
+                }
+            }
+        }
+
+        private ImageSource _imageSource;
         public ImageSource ImageSource
         {
             get => this._imageSource;
@@ -68,7 +95,8 @@ namespace QRSender
 
         private void StartScannerBtn_Click(object sender, RoutedEventArgs e)
         {
-            if (ComplexScanner.StartScanner(receivedData => HandleReceivedData(receivedData), errorMsg => MessageBox.Show($"Error: {errorMsg}")))
+            var scanner = new ComplexScanner(this);
+            if (scanner.StartScanner(receivedData => HandleReceivedData(receivedData), errorMsg => MessageBox.Show($"Error: {errorMsg}")))
                 MessageBox.Show("Scanner started.");
             else
                 MessageBox.Show("Scanner already running.");
@@ -82,7 +110,7 @@ namespace QRSender
             if (receivedData.GetType() == typeof(string))
                 msg = (string)receivedData;
             else if (receivedData.GetType() == typeof(byte[]))
-            { msg = ((byte[])receivedData)[4] == 253 ? "correct" : "incorrect"; System.IO.File.WriteAllBytes("2QRSender.dll", (byte[])receivedData); }
+            { msg = ((byte[])receivedData)[4] == 253 ? "correct" : "incorrect"; System.IO.File.WriteAllBytes("2QRSender.pdb", (byte[])receivedData); }
             else
                 throw new Exception($"Unsupported data type {receivedData.GetType()} in {nameof(HandleReceivedData)}.");
 
@@ -109,7 +137,7 @@ namespace QRSender
         private async void SendBinaryDataBtn_Click(object sender, RoutedEventArgs e)
         {
             //var binaryData = new byte[] { 0, 1, 3, 66, 253, 255, 0, 254, 177, 222, 234 };
-            var binaryData = System.IO.File.ReadAllBytes("QRSender.dll");
+            var binaryData = System.IO.File.ReadAllBytes("QRSender.pdb");
 
             try
             {
@@ -126,6 +154,11 @@ namespace QRSender
         private void StopSendingBtn_Click(object sender, RoutedEventArgs e)
         {
             ComplexEncoder.RequestStop();
+        }
+
+        private void ClearItemsBtn_Click(object sender, RoutedEventArgs e)
+        {
+            ComplexScanner.ClearItems();
         }
     }
 }
