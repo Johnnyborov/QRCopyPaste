@@ -6,6 +6,29 @@
         xmlns:local="clr-namespace:QRSender"
         mc:Ignorable="d"
         Title="MainWindow" Height="800" Width="800" WindowStartupLocation="CenterScreen">
+
+    <FrameworkElement.Resources>
+        <ResourceDictionary>
+            <Storyboard x:Key="ImgMarginAnimation">
+                <ThicknessAnimationUsingKeyFrames
+					Storyboard.TargetProperty="(FrameworkElement.Margin)"
+					Storyboard.TargetName="Img"
+					RepeatBehavior="Forever">
+                    <SplineThicknessKeyFrame KeyTime="00:00:0.0" Value="100, 100, 0, 0" />
+                    <SplineThicknessKeyFrame KeyTime="00:00:0.1" Value="100, 0, 0, 100" />
+                    <SplineThicknessKeyFrame KeyTime="00:00:0.2" Value="0, 0, 100, 100" />
+                    <SplineThicknessKeyFrame KeyTime="00:00:0.3" Value="0, 100, 100, 0" />
+                    <SplineThicknessKeyFrame KeyTime="00:00:0.4" Value="100, 100, 0, 0" />
+                </ThicknessAnimationUsingKeyFrames>
+            </Storyboard>
+        </ResourceDictionary>
+    </FrameworkElement.Resources>
+    <FrameworkElement.Triggers>
+        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+            <BeginStoryboard Storyboard="{StaticResource ImgMarginAnimation}" />
+        </EventTrigger>
+    </FrameworkElement.Triggers>
+    
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1*" />
@@ -28,7 +51,7 @@
         <TextBlock Grid.Column="1" Grid.Row="6" Grid.ColumnSpan="1" Text="{Binding ScanCycle}" />
         <ProgressBar Grid.Column="0" Grid.Row="7" Grid.ColumnSpan="3" Value="{Binding Progress}" />
 
-        <Image Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="3" Grid.RowSpan="6" Source="{Binding ImageSource}"
+        <Image x:Name="Img" Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="3" Grid.RowSpan="6" Source="{Binding ImageSource}"
                RenderOptions.BitmapScalingMode="Fant" Stretch="Uniform" Margin="0" />
 
         <Button Grid.Column="3" Grid.Row="0" Click="TestBtn_Click" Content="Test" />
