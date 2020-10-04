@@ -78,6 +78,7 @@ namespace QRSender
                     MsgIntegrity = Constants.QRDataPartMessageIntegrityCheckID,
                     ID = i,
                     Data = dataParts[i],
+                    DataHash = HelperFunctions.GetStringHash(dataParts[i]),
                 };
 
                 var dataPartsMessage = JsonSerializer.Serialize(qrDataPartsMessage);

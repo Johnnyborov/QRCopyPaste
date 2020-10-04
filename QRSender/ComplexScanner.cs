@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using ZXing;
@@ -72,7 +73,7 @@ namespace QRSender
             _receiverViewModel.ScanCycle = _scanCycle;
             _receiverViewModel.Progress = 1;
             var dataStrParts = await ScanAllDataStrPartsAsync(qrMessageSettings);
-            var fullDataStr = string.Join("", dataStrParts.Values);
+            var fullDataStr = string.Join("", dataStrParts.ToList().OrderBy(p => p.Key).Select(p => p.Value));
 
             var dataHash = GetStringHash(fullDataStr);
             if (dataHash != qrMessageSettings.DataHash)
@@ -152,7 +153,7 @@ namespace QRSender
                 if (currentData == null || currentData.MsgIntegrity != Constants.QRDataPartMessageIntegrityCheckID)
                     continue; // Was not a QRDataPartMessage (or failed to deserialize for some other reason).
 
-                if (!dataParts.ContainsKey(currentData.ID))
+                if (!dataParts.ContainsKey(currentData.ID) && GetStringHash(currentData.Data) == currentData.DataHash)
                 {
                     dataParts.Add(currentData.ID, currentData.Data);
                 }
