@@ -56,10 +56,12 @@
         <Image x:Name="Img" Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="3" Grid.RowSpan="6" Source="{Binding ImageSource}"
                RenderOptions.BitmapScalingMode="Fant" Stretch="Uniform" Margin="0" />
 
-        <Button Grid.Column="3" Grid.Row="0" Click="StartScannerBtn_Click" Content="StartScanner" />
-        <Button Grid.Column="3" Grid.Row="1" Click="SendClipboardBtn_Click" Content="SendClipboard" />
-        <Button Grid.Column="3" Grid.Row="2" Click="SendFileBtn_Click" Content="SendFileBtn" />
+        <Button Grid.Column="3" Grid.Row="0" Click="StartScanningBtn_Click" Content="StartScanning" />
+        <Button Grid.Column="3" Grid.Row="1" Click="SendClipboardTextBtn_Click" Content="SendClipboardText" />
+        <Button Grid.Column="3" Grid.Row="2" Click="SendFileBtn_Click" Content="SendFile" />
         <Button Grid.Column="3" Grid.Row="3" Click="StopSendingBtn_Click" Content="StopSending" />
         <Button Grid.Column="3" Grid.Row="4" Click="ClearCacheBtn_Click" Content="ClearCache" />
+        <Button Grid.Column="3" Grid.Row="5" Click="ResendLastBtn_Click" Content="ResendLast" />
+        <TextBox Grid.Column="3" Grid.Row="6" Name="ResendIDsTextBox" />
     </Grid>
 </Window>

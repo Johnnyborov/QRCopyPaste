@@ -86,11 +86,20 @@ namespace QRCopyPaste
         {
             if (dataParts.Count != qrPackageInfoMessage.NumberOfParts)
             {
+                var idsNotReceived = new List<string>();
+                for (int i = 0; i < qrPackageInfoMessage.NumberOfParts; i++)
+                {
+                    if (!dataParts.ContainsKey(i))
+                        idsNotReceived.Add(i.ToString());
+                }
+
                 var missingPartsCount = qrPackageInfoMessage.NumberOfParts - dataParts.Count;
                 throw new Exception(
                     $"Data was not fully received.\n" +
                     $"{dataParts.Count} out of {qrPackageInfoMessage.NumberOfParts} parts received.\n" +
-                    $"{missingPartsCount} parts missing."
+                    $"{missingPartsCount} parts missing.\n" +
+                    $"Missing IDs list:\n" +
+                    string.Join(" ", idsNotReceived)
                 );
             }
         }

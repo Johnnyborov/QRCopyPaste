@@ -2,6 +2,7 @@
 using System;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Windows;
 using System.Windows.Media;
@@ -86,7 +87,7 @@ namespace QRCopyPaste
 
         #region Methods
 
-        private void StartScannerBtn_Click(object sender, RoutedEventArgs e)
+        private void StartScanningBtn_Click(object sender, RoutedEventArgs e)
         {
             var qrReceiver = new QRReceiver(this);
             if (qrReceiver.StartScanning(receivedData => HandleReceivedData(receivedData), errorMsg => MessageBox.Show($"Error: {errorMsg}")))
@@ -122,7 +123,7 @@ namespace QRCopyPaste
         }
 
 
-        private async void SendClipboardBtn_Click(object sender, RoutedEventArgs e)
+        private async void SendClipboardTextBtn_Click(object sender, RoutedEventArgs e)
         {
             var stringData = Clipboard.GetData(DataFormats.Text);
             if (string.IsNullOrEmpty((string)stringData))
@@ -169,9 +170,29 @@ namespace QRCopyPaste
             QRSender.RequestStop();
         }
 
+
         private void ClearCacheBtn_Click(object sender, RoutedEventArgs e)
         {
             QRReceiver.ClearCache();
+        }
+
+
+        private async void ResendLastBtn_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string idsStr = ResendIDsTextBox.Text;
+                int[] ids =
+                    string.IsNullOrEmpty(idsStr)
+                    ? null
+                    : idsStr.Split(" ").Select(idStr => int.Parse(idStr)).ToArray();
+
+                await QRSender.ResendLast(ids);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error while resending: {ex.Message}");
+            }
         }
 
         #endregion
