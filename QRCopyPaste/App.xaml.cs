@@ -1,6 +1,4 @@
 ﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using System;
 using System.IO;
 using System.Windows;
 
@@ -8,8 +6,6 @@ namespace QRCopyPaste
 {
     public partial class App : Application
     {
-        public IServiceProvider ServiceProvider { get; private set; }
-
         public IConfiguration Configuration { get; private set; }
 
 
@@ -19,18 +15,9 @@ namespace QRCopyPaste
              .SetBasePath(Directory.GetCurrentDirectory())
              .AddJsonFile("app.json", optional: false, reloadOnChange: true);
 
-            Configuration = builder.Build();
+            this.Configuration = builder.Build();
 
-            ConfigureQRSenderAndLoaderSettings();
-
-
-            var serviceCollection = new ServiceCollection();
-            ConfigureServices(serviceCollection);
-
-            ServiceProvider = serviceCollection.BuildServiceProvider();
-
-            var mainWindow = ServiceProvider.GetRequiredService<MainWindow>();
-            mainWindow.Show();
+            this.ConfigureQRSenderAndLoaderSettings();
         }
 
 
@@ -59,12 +46,6 @@ namespace QRCopyPaste
                 appsettings.GetSection(nameof(QRReceiverSettings))
                 .GetSection(nameof(QRReceiverSettings.MaxMillisecondsToContinueSinceLastSuccessfulQRRead)).Value
             );
-        }
-
-
-        private void ConfigureServices(IServiceCollection services)
-        {
-            services.AddTransient(typeof(MainWindow));
         }
     }
 }
