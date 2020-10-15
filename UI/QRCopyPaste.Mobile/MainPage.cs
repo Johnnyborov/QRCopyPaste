@@ -42,7 +42,7 @@ namespace QRCopyPaste.Mobile
                         Device.BeginInvokeOnMainThread(async () =>
                         {
                             await Application.Current.MainPage.DisplayAlert(
-                                "Scanned result",
+                                ChunkedDataTransfer.Class1.GetTestString(),
                                 $"text = {result.Text}; count = {count}; sw.ElapsedMilliseconds = {sw.ElapsedMilliseconds}",
                                 "OK"
                             );
