@@ -1,5 +1,4 @@
-﻿using ICSharpCode.SharpZipLib.GZip;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -41,7 +40,7 @@ namespace QRCopyPaste
         {
             var unzippedDataBytesStream = new MemoryStream(unzippedDataBytes);
             var zippedDataBytesStream = new MemoryStream();
-            GZip.Compress(unzippedDataBytesStream, zippedDataBytesStream, true, 4096, 9);
+            //GZip.Compress(unzippedDataBytesStream, zippedDataBytesStream, true, 4096, 9);
 
             var zippedDataBytes = zippedDataBytesStream.ToArray();
             var zippedStringDataToSend = Convert.ToBase64String(zippedDataBytes);

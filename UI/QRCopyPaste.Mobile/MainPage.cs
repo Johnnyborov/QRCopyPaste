@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+﻿using ChunkedDataTransfer;
 using System.Threading.Tasks;
 using Xamarin.Essentials;
 using Xamarin.Forms;
@@ -9,19 +9,14 @@ namespace QRCopyPaste.Mobile
 {
     public class MainPage : ContentPage
     {
-        private static int count = 0;
-        private static Stopwatch sw = new Stopwatch();
-
         public MainPage()
         {
-            sw.Start();
-
-            var scanButton = new Button
+            var startScanningButton = new Button
             {
-                Text = "Scan",
+                Text = "StartScanning",
             };
 
-            scanButton.Clicked += async (s,e) =>
+            startScanningButton.Clicked += async (s,e) =>
             {
                 var scanPage = new ZXingScannerPage(
                     new MobileBarcodeScanningOptions
@@ -34,23 +29,28 @@ namespace QRCopyPaste.Mobile
                     }
                 );
 
+                var chunkedDataReceiver = new ChunkedDataReceiver();
+                chunkedDataReceiver.OnDataReceived += data =>
+                {
+                    Device.BeginInvokeOnMainThread(async () =>
+                    {
+                        await Application.Current.MainPage.DisplayAlert(
+                            "Received data",
+                            $"Copied to clipboard:\n\n{data}",
+                            "OK"
+                        );
+                    });
+
+                    Clipboard.SetTextAsync($"Copied: {data}");
+                };
+
                 scanPage.OnScanResult += (result) =>
                 {
-                    count++;
-                    if (count % 50 == 1)
-                    {
-                        Device.BeginInvokeOnMainThread(async () =>
-                        {
-                            await Application.Current.MainPage.DisplayAlert(
-                                ChunkedDataTransfer.Class1.GetTestString(),
-                                $"text = {result.Text}; count = {count}; sw.ElapsedMilliseconds = {sw.ElapsedMilliseconds}",
-                                "OK"
-                            );
-                        });
-
-                        Clipboard.SetTextAsync($"Copied:\n\n{result.Text}");
-                    }
+                    chunkedDataReceiver.ProcessChunk(result.Text);
                 };
+
+                chunkedDataReceiver.StartReceiving();
+
 
                 await Navigation.PushAsync(scanPage);
             };
@@ -58,29 +58,32 @@ namespace QRCopyPaste.Mobile
 
 
 
-            var displayButton = new Button
+            var sendClipboardButton = new Button
             {
-                Text = "Display",
+                Text = "SendClipboard",
             };
 
-            displayButton.Clicked += async (s, e) =>
+            sendClipboardButton.Clicked += async (s, e) =>
             {
                 var barcodePage = new BarcodePage();
                 await Navigation.PushAsync(barcodePage);
 
-                barcodePage.SetBarcodeValue("test1");
-                await Task.Delay(1000);
-                barcodePage.SetBarcodeValue("test2");
-                await Task.Delay(1000);
-                barcodePage.SetBarcodeViewVisibility(false);
+                var dataSender = new MobileQRDataSender(
+                    data => barcodePage.SetBarcodeValue(data),
+                    () => barcodePage.SetBarcodeViewVisibility(false)
+                );
+                var chunkedDataSender = new ChunkedDataSender(dataSender);
+
+                string clipboardText = await Clipboard.GetTextAsync();
+                await chunkedDataSender.Send("change to clip");
             };
 
 
 
 
             var stackLayout = new StackLayout();
-            stackLayout.Children.Add(scanButton);
-            stackLayout.Children.Add(displayButton);
+            stackLayout.Children.Add(startScanningButton);
+            stackLayout.Children.Add(sendClipboardButton);
             this.Content = stackLayout;
         }
     }
