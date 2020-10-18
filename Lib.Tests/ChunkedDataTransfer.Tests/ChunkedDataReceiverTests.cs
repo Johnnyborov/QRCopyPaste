@@ -1,25 +1,37 @@
+using System.Threading.Tasks;
 using Xunit;
 
 namespace ChunkedDataTransfer.Tests
 {
     public class ChunkedDataReceiverTests
     {
-        [Fact]
-        public void ChunkedDataReceiver_ReceivesAllParts()
+        private readonly ChunkedDataReceiver chunkedDataReceiver;
+
+        public ChunkedDataReceiverTests()
         {
-            string testData = "This is a test data part string";
+            this.chunkedDataReceiver = new ChunkedDataReceiver();
+        }
 
-            var chunkedDataReceiver = new ChunkedDataReceiver();
-            string received = null;
-            chunkedDataReceiver.OnDataReceived += data => received = data;
-            chunkedDataReceiver.StartReceiving();
 
-            chunkedDataReceiver.ProcessChunk("This");
-            chunkedDataReceiver.ProcessChunk(" is a test data part");
-            chunkedDataReceiver.ProcessChunk(" ");
-            chunkedDataReceiver.ProcessChunk("string");
+        [Theory]
+        [InlineData("This is a garbage chunk")]
+        public void ProcessChunk_DoesNotThrowOnGarbageChunk(string garbageChunk)
+        {
+            this.chunkedDataReceiver.StartReceiving();
+            this.chunkedDataReceiver.ProcessChunk(garbageChunk);
+        }
 
-            Assert.Equal(testData, received);
+
+        [Theory]
+        [InlineData("This is a garbage chunk")]
+        public void ProcessChunk_DoesNotReceiveGarbageChunkAsTotalResult(string garbageChunk)
+        {
+            int dataReceivedCalledCount = 0;
+            this.chunkedDataReceiver.OnStringDataReceived += data => dataReceivedCalledCount++;
+            this.chunkedDataReceiver.StartReceiving();
+            this.chunkedDataReceiver.ProcessChunk(garbageChunk);
+
+            Assert.True(dataReceivedCalledCount == 0);
         }
     }
 }

@@ -1,10 +1,12 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 
 namespace ChunkedDataTransfer
 {
     public class ChunkedDataReceiver
     {
-        public event DataReceivedEventHandler OnDataReceived;
+        public event StringDataReceivedEventHandler OnStringDataReceived;
+        public event ByteDataReceivedEventHandler OnByteDataReceived;
 
 
         private readonly StringBuilder sb;
@@ -21,6 +23,12 @@ namespace ChunkedDataTransfer
         }
 
 
+        public void ClearCache()
+        {
+            throw new NotImplementedException();
+        }
+
+
         public void ProcessChunk(string dataChunk)
         {
             sb.Append(dataChunk);
@@ -29,7 +37,7 @@ namespace ChunkedDataTransfer
             {
                 string fullData = sb.ToString();
                 this.sb.Clear();
-                this.OnDataReceived?.Invoke(fullData);
+                //this.OnStringDataReceived?.Invoke(fullData);
             }
         }
     }

@@ -73,7 +73,8 @@ namespace QRCopyPaste
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-        private ChunkedDataSender chunkedDataSender;
+        private readonly ChunkedDataSender chunkedDataSender;
+        private readonly ChunkedDataReceiver chunkedDataReceiver;
 
         #endregion
 
@@ -85,7 +86,8 @@ namespace QRCopyPaste
             DataContext = this;
 
             var dataSender = new DesktopQRDataSender(this);
-            chunkedDataSender = new ChunkedDataSender(dataSender);
+            this.chunkedDataSender = new ChunkedDataSender(dataSender);
+            this.chunkedDataReceiver = new ChunkedDataReceiver();
         }
 
         #endregion
@@ -100,12 +102,12 @@ namespace QRCopyPaste
 
         private void StartScanningBtn_Click(object sender, RoutedEventArgs e)
         {
-            var chunkedDataReceiver = new ChunkedDataReceiver();
-            chunkedDataReceiver.OnDataReceived += HandleReceivedData;
-            chunkedDataReceiver.StartReceiving();
+            this.chunkedDataReceiver.OnStringDataReceived += HandleReceivedData;
+            this.chunkedDataReceiver.OnByteDataReceived += HandleReceivedData;
+            this.chunkedDataReceiver.StartReceiving();
 
             var qrScreenScanner = new QRScreenScanner();
-            qrScreenScanner.OnDataReceived += (data) => chunkedDataReceiver.ProcessChunk(data);
+            qrScreenScanner.OnQRTextDataReceived += (data) => this.chunkedDataReceiver.ProcessChunk(data);
             qrScreenScanner.OnError += (errorMsg) => this.ShowMessage($"Error: {errorMsg}");
 
             if (qrScreenScanner.StartScanning())
@@ -149,7 +151,7 @@ namespace QRCopyPaste
 
             try
             {
-                await this.chunkedDataSender.Send((string)stringData);
+                await this.chunkedDataSender.SendAsync((string)stringData);
             }
             catch (Exception ex)
             {
@@ -167,7 +169,7 @@ namespace QRCopyPaste
 
                 try
                 {
-                    await this.chunkedDataSender.Send(binaryData);
+                    await this.chunkedDataSender.SendAsync(binaryData);
                 }
                 catch (Exception ex)
                 {
@@ -185,7 +187,7 @@ namespace QRCopyPaste
 
         private void ClearCacheBtn_Click(object sender, RoutedEventArgs e)
         {
-            this.chunkedDataSender.ClearCache();
+            this.chunkedDataReceiver.ClearCache();
         }
 
 
@@ -199,7 +201,7 @@ namespace QRCopyPaste
                     ? null
                     : idsStr.Split(" ").Select(idStr => int.Parse(idStr)).ToArray();
 
-                await this.chunkedDataSender.ResendLast(ids);
+                await this.chunkedDataSender.ResendLastAsync(ids);
             }
             catch (Exception ex)
             {

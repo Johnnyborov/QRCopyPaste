@@ -1,8 +1,10 @@
-﻿namespace ChunkedDataTransfer
+﻿using System.Threading.Tasks;
+
+namespace ChunkedDataTransfer
 {
     public interface IDataSender
     {
-        void Send(string data);
+        Task SendAsync(string data);
         void Stop();
     }
 }

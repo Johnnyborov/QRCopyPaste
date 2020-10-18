@@ -30,7 +30,7 @@ namespace QRCopyPaste.Mobile
                 );
 
                 var chunkedDataReceiver = new ChunkedDataReceiver();
-                chunkedDataReceiver.OnDataReceived += data =>
+                chunkedDataReceiver.OnStringDataReceived += data =>
                 {
                     Device.BeginInvokeOnMainThread(async () =>
                     {
@@ -75,7 +75,7 @@ namespace QRCopyPaste.Mobile
                 var chunkedDataSender = new ChunkedDataSender(dataSender);
 
                 string clipboardText = await Clipboard.GetTextAsync();
-                await chunkedDataSender.Send("change to clip");
+                await chunkedDataSender.SendAsync("change to clip");
             };
 
 

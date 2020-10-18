@@ -1,5 +1,6 @@
 ﻿using ChunkedDataTransfer;
 using System;
+using System.Threading.Tasks;
 
 namespace QRCopyPaste.Mobile
 {
@@ -17,9 +18,10 @@ namespace QRCopyPaste.Mobile
         }
 
 
-        public void Send(string data)
+        public async Task SendAsync(string data)
         {
             this.sendAction.Invoke(data);
+            await Task.Delay(500);
         }
 
         public void Stop()

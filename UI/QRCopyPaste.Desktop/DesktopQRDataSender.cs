@@ -1,4 +1,5 @@
 ﻿using ChunkedDataTransfer;
+using System.Threading.Tasks;
 
 namespace QRCopyPaste
 {
@@ -12,10 +13,11 @@ namespace QRCopyPaste
         }
 
 
-        public void Send(string data)
+        public async Task SendAsync(string data)
         {
             var imgSource = QRSenderHelper.CreateQRWritableBitampFromString(data);
             this.senderViewModel.ImageSource = imgSource;
+            await Task.Delay(500);
         }
 
         public void Stop()

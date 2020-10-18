@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace ChunkedDataTransfer
+﻿namespace ChunkedDataTransfer
 {
-    public delegate void DataReceivedEventHandler(string data);
+    public delegate void StringDataReceivedEventHandler(string data);
+    public delegate void ByteDataReceivedEventHandler(byte[] data);
 }

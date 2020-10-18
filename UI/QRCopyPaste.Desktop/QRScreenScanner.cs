@@ -1,5 +1,4 @@
-﻿using ChunkedDataTransfer;
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using ZXing;
 
@@ -7,8 +6,8 @@ namespace QRCopyPaste
 {
     public class QRScreenScanner
     {
-        public event DataReceivedEventHandler OnDataReceived;
-        public event DataReceivedEventHandler OnError;
+        public event QRTextDataReceivedEventHandler OnQRTextDataReceived;
+        public event ErrorHappenedEventHandler OnError;
 
 
         private static bool _stopRequested = false;
@@ -19,7 +18,7 @@ namespace QRCopyPaste
             if (!_isRunning)
             {
                 _isRunning = true;
-                Task.Run(() => RunScansUntilStopRequested());
+                Task.Run(() => RunScansUntilStopRequestedAsync());
                 return true;
             }
 
@@ -27,14 +26,14 @@ namespace QRCopyPaste
         }
 
 
-        private async Task RunScansUntilStopRequested()
+        private async Task RunScansUntilStopRequestedAsync()
         {
             while (!_stopRequested)
             {
                 try
                 {
                     var data = await WaitForSuccessfullyDecodedQRAsync();
-                    this.OnDataReceived?.Invoke(data);
+                    this.OnQRTextDataReceived?.Invoke(data);
                 }
                 catch (Exception ex)
                 {
