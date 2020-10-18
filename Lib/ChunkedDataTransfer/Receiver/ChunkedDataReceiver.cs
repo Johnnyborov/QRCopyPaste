@@ -12,10 +12,17 @@ namespace ChunkedDataTransfer
     {
         public event StringDataReceivedEventHandler OnStringDataReceived;
         public event ByteDataReceivedEventHandler OnByteDataReceived;
+        public event ProgressChangedEventHandler OnProgressChanged;
+        public event ReceivingStartedEventHandler OnReceivingStarted;
+        public event ReceivingStoppedEventHandler OnReceivingStopped;
+        public event ChunkReceivedEventHandler OnChunkReceived;
+        public event NotificationEventHandler OnNotification;
 
 
         private static Dictionary<string, Dictionary<int, string>> _receivedItemsCache;
         private static Dictionary<string, QRPackageInfoMessage> _receivedPackageInfoMessages;
+        private bool _isRunning = false;
+        private string _currentlyReceivingObjectID;
 
         public ChunkedDataReceiver()
         {
@@ -26,28 +33,56 @@ namespace ChunkedDataTransfer
 
         public void StartReceiving()
         {
+            this._isRunning = true;
         }
 
 
         public void ClearCache()
         {
             _receivedItemsCache.Clear();
-            //_receiverViewModel.ReceiverProgress = 0;
+            this.OnProgressChanged?.Invoke(0);
+        }
+
+
+        public void StopReceivingAll()
+        {
+            this.OnReceivingStopped?.Invoke(null);
+            this._isRunning = false;
+            this._currentlyReceivingObjectID = null;
+        }
+
+
+        public void StopReceiving(string objectID)
+        {
+            var qrPackageInfoMessage = _receivedPackageInfoMessages[objectID];
+            var dataParts = _receivedItemsCache[qrPackageInfoMessage.DataHash];
+
+            this.NotifyIfNotAllDataPartsReceived(qrPackageInfoMessage, dataParts);
+
+            this.OnReceivingStopped?.Invoke(objectID);
+            this._currentlyReceivingObjectID = null;
         }
 
 
         public void ProcessChunk(string dataChunk)
         {
+            if (!this._isRunning)
+                return;
+
             if (TryDeserialize<QRPackageInfoMessage>(dataChunk, out var qrPackageInfoMessage2)
                 && qrPackageInfoMessage2.MsgIntegrity == Constants.QRPackageInfoMessageIntegrityCheckID)
             {
                 if (!_receivedPackageInfoMessages.ContainsKey(qrPackageInfoMessage2.DataHash))
                     _receivedPackageInfoMessages.Add(qrPackageInfoMessage2.ObjectID, qrPackageInfoMessage2);
 
-                //_scanCycle++;
-                //_receiverViewModel.ScanCycle = _scanCycle;
-                //_receiverViewModel.ReceiverProgress = 1;
+                this.OnProgressChanged?.Invoke(1);
+                if (this._currentlyReceivingObjectID is null)
+                    this.OnReceivingStarted?.Invoke(qrPackageInfoMessage2.ObjectID);
+                this._currentlyReceivingObjectID = qrPackageInfoMessage2.ObjectID;
             }
+
+            if (this._currentlyReceivingObjectID is null)
+                return;
 
             if (TryDeserialize<QRDataPartMessage>(dataChunk, out var dataPartMessage)
                 && dataPartMessage.MsgIntegrity == Constants.QRDataPartMessageIntegrityCheckID)
@@ -55,19 +90,25 @@ namespace ChunkedDataTransfer
                 if (!_receivedPackageInfoMessages.ContainsKey(dataPartMessage.ObjectID))
                     return;
 
+                this.OnChunkReceived?.Invoke(dataPartMessage.ObjectID);
+
+
                 var qrPackageInfoMessage = _receivedPackageInfoMessages[dataPartMessage.ObjectID];
 
                 if (!_receivedItemsCache.ContainsKey(qrPackageInfoMessage.DataHash))
                     _receivedItemsCache.Add(qrPackageInfoMessage.DataHash, new Dictionary<int, string>());
                 var dataParts = _receivedItemsCache[qrPackageInfoMessage.DataHash];
 
-                if (!dataParts.ContainsKey(dataPartMessage.ID) && HashHelper.GetStringHash(dataPartMessage.Data) == dataPartMessage.DataHash)
+
+                if (!dataParts.ContainsKey(dataPartMessage.ID)
+                    && HashHelper.GetStringHash(dataPartMessage.Data) == dataPartMessage.DataHash)
+                {
                     dataParts.Add(dataPartMessage.ID, dataPartMessage.Data);
+                }
 
-                //_receiverViewModel.ReceiverProgress = 1 + 99 * dataParts.Count / qrPackageInfoMessage.NumberOfParts;
 
-                if (false) // stopped from somewhere out
-                    ThrowIfNotAllDataPartsReceived(qrPackageInfoMessage, dataParts);
+                int progress = 1 + 99 * dataParts.Count / qrPackageInfoMessage.NumberOfParts;
+                this.OnProgressChanged?.Invoke(progress);
 
                 if (dataParts.Count == qrPackageInfoMessage.NumberOfParts)
                 {
@@ -76,12 +117,15 @@ namespace ChunkedDataTransfer
 
                     var fullData = ConvertToInitialTypeFromString(fullDataStr, qrPackageInfoMessage.DataType);
                     this.NotifyDataReceived(fullData, qrPackageInfoMessage.DataType);
+
+                    this.OnReceivingStopped?.Invoke(null);
+                    this._currentlyReceivingObjectID = null;
                 }
             }
         }
 
 
-        private static void ThrowIfNotAllDataPartsReceived(QRPackageInfoMessage qrPackageInfoMessage, Dictionary<int, string> dataParts)
+        private void NotifyIfNotAllDataPartsReceived(QRPackageInfoMessage qrPackageInfoMessage, Dictionary<int, string> dataParts)
         {
             if (dataParts.Count != qrPackageInfoMessage.NumberOfParts)
             {
@@ -93,7 +137,7 @@ namespace ChunkedDataTransfer
                 }
 
                 var missingPartsCount = qrPackageInfoMessage.NumberOfParts - dataParts.Count;
-                throw new Exception(
+                this.OnNotification?.Invoke(
                     $"Data was not fully received.\n" +
                     $"{dataParts.Count} out of {qrPackageInfoMessage.NumberOfParts} parts received.\n" +
                     $"{missingPartsCount} parts missing.\n" +

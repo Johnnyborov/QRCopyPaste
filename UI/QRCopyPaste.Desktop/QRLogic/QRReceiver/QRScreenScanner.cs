@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using ZXing;
 
@@ -7,7 +9,7 @@ namespace QRCopyPaste
     public class QRScreenScanner
     {
         public event QRTextDataReceivedEventHandler OnQRTextDataReceived;
-        public event ErrorHappenedEventHandler OnError;
+        public event ErrorEventHandler OnError;
 
 
         private static bool _stopRequested = false;
@@ -37,20 +39,25 @@ namespace QRCopyPaste
                 }
                 catch (Exception ex)
                 {
-                    OnError(ex.Message);
+                    this.OnError?.Invoke(ex.Message);
                 }
             }
         }
 
-
-        private static async Task<string> WaitForSuccessfullyDecodedQRAsync()
+        private readonly Stopwatch sw = new Stopwatch();
+        private async Task<string> WaitForSuccessfullyDecodedQRAsync()
         {
             Result barcodeResult = null;
             while (barcodeResult == null)
             {
                 var bitmap = QRMessageScannerHelper.CreateBitmapFromScreen();
                 barcodeResult = QRMessageScannerHelper.GetBarcodeResultFromQRBitmap(bitmap);
-                await Task.Delay(50);
+
+                long minDelayMs = QRReceiverSettings.ScanPeriodForSettingsMessageMilliseconds;
+                long elapsedMs = this.sw.ElapsedMilliseconds;
+                int timeToWaitMs = (int)(minDelayMs - elapsedMs);
+                if (timeToWaitMs > 0)
+                    await Task.Delay(timeToWaitMs);
             }
 
             return barcodeResult.Text;

@@ -1,5 +1,6 @@
 ﻿using ChunkedDataTransfer;
 using Microsoft.Win32;
+using QRCopyPaste.Desktop.QRLogic;
 using System;
 using System.ComponentModel;
 using System.IO;
@@ -9,7 +10,7 @@ using System.Windows.Media;
 
 namespace QRCopyPaste
 {
-    public partial class MainWindow : Window, INotifyPropertyChanged, ISenderViewModel, IReceiverViewModel
+    public partial class MainWindow : Window, INotifyPropertyChanged
     {
         #region Fields
 
@@ -71,10 +72,13 @@ namespace QRCopyPaste
 
 
         public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        protected void OnPropertyChanged(string propertyName)
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
         private readonly ChunkedDataSender chunkedDataSender;
         private readonly ChunkedDataReceiver chunkedDataReceiver;
+        private readonly TimeoutWatcher timeoutWatcher;
+        private string currentlyReceivingObjectID;
 
         #endregion
 
@@ -85,9 +89,34 @@ namespace QRCopyPaste
             InitializeComponent();
             DataContext = this;
 
-            var dataSender = new DesktopQRDataSender(this);
+            var dataSender = new DesktopQRDataSender();
+            dataSender.OnQRImageChanged += imageSource => this.ImageSource = imageSource;
             this.chunkedDataSender = new ChunkedDataSender(dataSender);
+            this.chunkedDataSender.OnProgressChanged += progress => this.SenderProgress = progress;
+            this.chunkedDataSender.ChunkSize = QRSenderSettings.ChunkSize;
+
             this.chunkedDataReceiver = new ChunkedDataReceiver();
+            this.chunkedDataReceiver.OnProgressChanged += progress => this.ReceiverProgress = progress;
+            this.chunkedDataReceiver.OnReceivingStarted += objectID =>
+            {
+                this.ScanCycle++;
+                this.currentlyReceivingObjectID = objectID;
+                this.timeoutWatcher.Start();
+            };
+            this.chunkedDataReceiver.OnReceivingStopped += objectID =>
+            {
+                this.timeoutWatcher.Stop();
+                this.currentlyReceivingObjectID = null;
+            };
+            this.timeoutWatcher = new TimeoutWatcher(() =>
+            {
+                this.chunkedDataReceiver.StopReceiving(this.currentlyReceivingObjectID);
+            });
+            this.chunkedDataReceiver.OnChunkReceived += objectID =>
+            {
+                this.timeoutWatcher.Restart();
+            };
+            this.chunkedDataReceiver.OnNotification += msg => this.ShowMessage(msg);
         }
 
         #endregion

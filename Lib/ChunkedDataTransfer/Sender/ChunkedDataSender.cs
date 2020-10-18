@@ -6,6 +6,7 @@ namespace ChunkedDataTransfer
 {
     public class ChunkedDataSender
     {
+        public event ProgressChangedEventHandler OnProgressChanged;
         public int ChunkSize { get; set; } = 500;
 
 
@@ -75,7 +76,7 @@ namespace ChunkedDataTransfer
 
         private async Task SendAllDataPartsAsync(string[] dataParts, int[] selectiveIDs = null)
         {
-            //_senderViewModel.SenderProgress = 1;
+            this.OnProgressChanged?.Invoke(1);
 
             var numberOfParts = dataParts.Length;
             for (int i = 0; i < numberOfParts; i++)
@@ -83,8 +84,8 @@ namespace ChunkedDataTransfer
                 if (_stopRequested)
                     return;
 
-                //_senderViewModel.SenderProgress = 1 + 99 * (i + 1) / numberOfParts;
-
+                int progress = 1 + 99 * (i + 1) / numberOfParts;
+                this.OnProgressChanged?.Invoke(progress);
 
                 if (selectiveIDs != null && !selectiveIDs.Contains(i))
                     continue;
