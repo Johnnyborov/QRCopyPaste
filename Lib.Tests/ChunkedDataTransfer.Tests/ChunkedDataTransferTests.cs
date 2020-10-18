@@ -20,8 +20,9 @@ namespace ChunkedDataTransfer.Tests
 
 
         [Theory]
-        [InlineData("This is a test data string")]
-        public async Task SendReceive_TransfersAllStringDataIntact(string testData)
+        [InlineData("This is a test data string", 99)]
+        [InlineData("This is a test data string", 5)]
+        public async Task SendReceive_TransfersAllStringDataIntact(string testData, int chunkSize)
         {
             string received = null;
             this.chunkedDataReceiver.OnStringDataReceived += data => received = data;
@@ -30,6 +31,8 @@ namespace ChunkedDataTransfer.Tests
             this.dataSenderMock
                 .Setup(x => x.SendAsync(It.IsAny<string>()))
                 .Callback<string>(chunk => this.chunkedDataReceiver.ProcessChunk(chunk));
+
+            this.chunkedDataSender.ChunkSize = chunkSize;
             await this.chunkedDataSender.SendAsync(testData);
 
             Assert.Equal(testData, received);
@@ -37,8 +40,9 @@ namespace ChunkedDataTransfer.Tests
 
 
         [Theory]
-        [InlineData(new byte[] { 0, 7, 6, 173, 97, 240, 255, 233, 0 })]
-        public async Task SendReceive_TransfersAllByteDataIntact(byte[] testData)
+        [InlineData(new byte[] { 0, 7, 6, 173, 97, 240, 255, 233, 0 }, 99)]
+        [InlineData(new byte[] { 0, 7, 6, 173, 97, 240, 255, 233, 0 }, 3)]
+        public async Task SendReceive_TransfersAllByteDataIntact(byte[] testData, int chunkSize)
         {
             byte[] received = null;
             this.chunkedDataReceiver.OnByteDataReceived += data => received = data;
@@ -47,6 +51,8 @@ namespace ChunkedDataTransfer.Tests
             this.dataSenderMock
                 .Setup(x => x.SendAsync(It.IsAny<string>()))
                 .Callback<string>(chunk => this.chunkedDataReceiver.ProcessChunk(chunk));
+
+            this.chunkedDataSender.ChunkSize = chunkSize;
             await this.chunkedDataSender.SendAsync(testData);
 
             Assert.True(testData.SequenceEqual(received));

@@ -1,15 +1,24 @@
-﻿using System;
+﻿using ICSharpCode.SharpZipLib.GZip;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
 
-namespace QRCopyPaste
+namespace ChunkedDataTransfer
 {
-    public static class QRPackageCreator
+    public class PackageCreator
     {
-        public static QRPackage CreateQRPackage<TData>(TData data)
+        private int chunkSize;
+
+        public PackageCreator(int chunkSize)
+        {
+            this.chunkSize = chunkSize;
+        }
+
+
+        public QRPackage CreateQRPackage<TData>(TData data)
         {
             string zippedStringDataToSend;
             string dataType;
@@ -40,7 +49,7 @@ namespace QRCopyPaste
         {
             var unzippedDataBytesStream = new MemoryStream(unzippedDataBytes);
             var zippedDataBytesStream = new MemoryStream();
-            //GZip.Compress(unzippedDataBytesStream, zippedDataBytesStream, true, 4096, 9);
+            GZip.Compress(unzippedDataBytesStream, zippedDataBytesStream, true, 4096, 9);
 
             var zippedDataBytes = zippedDataBytesStream.ToArray();
             var zippedStringDataToSend = Convert.ToBase64String(zippedDataBytes);
@@ -48,13 +57,15 @@ namespace QRCopyPaste
         }
 
 
-        private static QRPackage CreateQRPackageFromString(string data, string dataType)
+        private QRPackage CreateQRPackageFromString(string data, string dataType)
         {
-            var dataParts = SplitStringToChunks(data, QRSenderSettings.ChunkSize).ToArray();
-            var dataPartsMessages = CreateQRDataPartsMessages(dataParts);
-
             var dataHash = HashHelper.GetStringHash(data);
-            var settingsMessage = CreateQRSettingsMessage(dataPartsMessages, dataType, dataHash);
+            string objectID = dataHash;
+
+            var dataParts = SplitStringToChunks(data, this.chunkSize).ToArray();
+            var dataPartsMessages = CreateQRDataPartsMessages(dataParts, objectID);
+
+            var settingsMessage = CreateQRSettingsMessage(dataPartsMessages, dataType, dataHash, objectID);
 
             var qrMessagesPackage = new QRPackage
             {
@@ -66,15 +77,16 @@ namespace QRCopyPaste
         }
 
 
-        private static string CreateQRSettingsMessage(string[] dataParts, string dataType, string dataHash)
+        private static string CreateQRSettingsMessage(
+            string[] dataParts, string dataType, string dataHash, string objectID)
         {
             var qrPackageInfoMessage = new QRPackageInfoMessage
             {
                 MsgIntegrity = Constants.QRPackageInfoMessageIntegrityCheckID,
                 NumberOfParts = dataParts.Length,
-                SenderDelay = QRSenderSettings.SendDelayMilliseconds,
                 DataType = dataType,
                 DataHash = dataHash,
+                ObjectID = objectID,
             };
 
             var qrPackageInfoMessageStr = JsonSerializer.Serialize(qrPackageInfoMessage);
@@ -82,7 +94,7 @@ namespace QRCopyPaste
         }
 
 
-        private static string[] CreateQRDataPartsMessages(string[] dataParts)
+        private static string[] CreateQRDataPartsMessages(string[] dataParts, string objectID)
         {
             var dataPartsMessages = new List<string>();
 
@@ -94,6 +106,7 @@ namespace QRCopyPaste
                     ID = i,
                     Data = dataParts[i],
                     DataHash = HashHelper.GetStringHash(dataParts[i]),
+                    ObjectID = objectID,
                 };
 
                 var dataPartsMessage = JsonSerializer.Serialize(qrDataPartsMessage);

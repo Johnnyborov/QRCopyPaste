@@ -1,4 +1,4 @@
-﻿namespace QRCopyPaste
+﻿namespace ChunkedDataTransfer
 {
     public class QRPackage
     {
