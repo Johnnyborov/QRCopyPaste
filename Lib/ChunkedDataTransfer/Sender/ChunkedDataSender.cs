@@ -10,23 +10,22 @@ namespace ChunkedDataTransfer
         public int ChunkSize { get; set; } = 500;
 
 
-        private QRPackage _lastQRPackage = null;
+        private Package _lastPackage = null;
         private bool _stopRequested = false;
         private bool _isRunning = false;
-
-        private readonly IDataSender dataSender;
+        private readonly IDataSender _dataSender;
 
         public ChunkedDataSender(IDataSender dataSender)
         {
-            this.dataSender = dataSender;
+            this._dataSender = dataSender;
         }
 
 
         public async Task SendAsync<TData>(TData data)
         {
-            if (_isRunning)
+            if (this._isRunning)
                 throw new Exception("Data sending is already in progress.");
-            _isRunning = true;
+            this._isRunning = true;
 
             if (data is null)
                 throw new ArgumentNullException($"{nameof(data)} is null in {nameof(SendAsync)}");
@@ -36,41 +35,42 @@ namespace ChunkedDataTransfer
                 throw new Exception($"{nameof(data)} is empty in {nameof(SendAsync)}");
 
             var packageCreator = new PackageCreator(this.ChunkSize);
-            var qrPackage = packageCreator.CreateQRPackage(data);
-            _lastQRPackage = qrPackage;
+            var package = packageCreator.CreatePackage(data);
+            this._lastPackage = package;
 
-            await this.dataSender.SendAsync(qrPackage.QRPackageInfoMessage);
-            await this.SendAllDataPartsAsync(qrPackage.QRDataPartsMessages);
+            await this._dataSender.SendAsync(package.PackageInfoMessage);
+            await this.SendAllDataPartsAsync(package.DataPartsMessages);
 
-            this.dataSender.Stop();
-            _isRunning = false;
-            _stopRequested = false;
+            this._dataSender.Stop();
+            this._isRunning = false;
+            this._stopRequested = false;
         }
 
 
         public async Task ResendLastAsync(int[] selectiveIDs)
         {
-            if (_lastQRPackage == null)
+            if (this._lastPackage == null)
                 throw new Exception("There is nothing to resend.");
-            if (_isRunning)
+
+            if (this._isRunning)
                 throw new Exception("Data sending is already in progress.");
-            _isRunning = true;
+            this._isRunning = true;
 
-            var qrPackage = _lastQRPackage;
+            var package = this._lastPackage;
 
-            await this.dataSender.SendAsync(qrPackage.QRPackageInfoMessage);
-            await this.SendAllDataPartsAsync(qrPackage.QRDataPartsMessages, selectiveIDs);
+            await this._dataSender.SendAsync(package.PackageInfoMessage);
+            await this.SendAllDataPartsAsync(package.DataPartsMessages, selectiveIDs);
 
-            this.dataSender.Stop();
-            _isRunning = false;
-            _stopRequested = false;
+            this._dataSender.Stop();
+            this._isRunning = false;
+            this._stopRequested = false;
         }
 
 
         public void StopSending()
         {
-            this.dataSender.Stop();
-            _stopRequested = true;
+            this._dataSender.Stop();
+            this._stopRequested = true;
         }
 
 
@@ -81,7 +81,7 @@ namespace ChunkedDataTransfer
             var numberOfParts = dataParts.Length;
             for (int i = 0; i < numberOfParts; i++)
             {
-                if (_stopRequested)
+                if (this._stopRequested)
                     return;
 
                 int progress = 1 + 99 * (i + 1) / numberOfParts;
@@ -92,7 +92,7 @@ namespace ChunkedDataTransfer
 
                 string dataPart = dataParts[i];
 
-                await this.dataSender.SendAsync(dataPart);
+                await this._dataSender.SendAsync(dataPart);
             }
         }
     }

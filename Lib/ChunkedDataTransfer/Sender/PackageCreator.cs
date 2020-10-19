@@ -1,144 +1,84 @@
-﻿using ICSharpCode.SharpZipLib.GZip;
-using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.Json;
 
 namespace ChunkedDataTransfer
 {
-    public class PackageCreator
+    internal class PackageCreator
     {
-        private int chunkSize;
+        private readonly int _chunkSize;
 
-        public PackageCreator(int chunkSize)
+        internal PackageCreator(int chunkSize)
         {
-            this.chunkSize = chunkSize;
+            this._chunkSize = chunkSize;
         }
 
 
-        public QRPackage CreateQRPackage<TData>(TData data)
+        internal Package CreatePackage<TData>(TData data)
         {
-            string zippedStringDataToSend;
-            string dataType;
-
-            if (data is string unzippedDataStr)
-            {
-                var unzippedDataBytes = Encoding.UTF8.GetBytes(unzippedDataStr);
-                zippedStringDataToSend = GetZippedStringDataToSend(unzippedDataBytes);
-                dataType = Constants.StringTypeName;
-            }
-            else if (data is byte[] unzippedDataBytes)
-            {
-                zippedStringDataToSend = GetZippedStringDataToSend(unzippedDataBytes);
-                dataType = Constants.ByteArrayTypeName;
-            }
-            else
-            {
-                throw new NotSupportedException($"Unsupported data type {data.GetType()} during {nameof(QRPackage)} creation.");
-            }
-
-
-            var qrMessagesPackage = CreateQRPackageFromString(zippedStringDataToSend, dataType);
-            return qrMessagesPackage;
+            var (zippedDataStrToSend, dataType) = ConvertHelper.GetZippedDataStrToSend(data);
+            var package = CreatePackageFromString(zippedDataStrToSend, dataType);
+            return package;
         }
 
 
-        private static string GetZippedStringDataToSend(byte[] unzippedDataBytes)
-        {
-            var unzippedDataBytesStream = new MemoryStream(unzippedDataBytes);
-            var zippedDataBytesStream = new MemoryStream();
-            GZip.Compress(unzippedDataBytesStream, zippedDataBytesStream, true, 4096, 9);
-
-            var zippedDataBytes = zippedDataBytesStream.ToArray();
-            var zippedStringDataToSend = Convert.ToBase64String(zippedDataBytes);
-            return zippedStringDataToSend;
-        }
-
-
-        private QRPackage CreateQRPackageFromString(string data, string dataType)
+        private Package CreatePackageFromString(string data, string dataType)
         {
             var dataHash = HashHelper.GetStringHash(data);
             string objectID = dataHash;
 
-            var dataParts = SplitStringToChunks(data, this.chunkSize).ToArray();
-            var dataPartsMessages = CreateQRDataPartsMessages(dataParts, objectID);
+            var dataParts = SplitHelper.SplitStringToChunks(data, this._chunkSize).ToArray();
+            var dataPartsMessages = CreateDataPartsMessages(dataParts, objectID);
 
-            var settingsMessage = CreateQRSettingsMessage(dataPartsMessages, dataType, dataHash, objectID);
+            var packageInfoMessage = CreatePackageInfoMessage(dataPartsMessages, dataType, dataHash, objectID);
 
-            var qrMessagesPackage = new QRPackage
+            var package = new Package
             {
-                QRPackageInfoMessage = settingsMessage,
-                QRDataPartsMessages = dataPartsMessages,
+                PackageInfoMessage = packageInfoMessage,
+                DataPartsMessages = dataPartsMessages,
             };
 
-            return qrMessagesPackage;
+            return package;
         }
 
 
-        private static string CreateQRSettingsMessage(
+        private static string CreatePackageInfoMessage(
             string[] dataParts, string dataType, string dataHash, string objectID)
         {
-            var qrPackageInfoMessage = new QRPackageInfoMessage
+            var packageInfoMessage = new PackageInfoMessage
             {
-                MsgIntegrity = Constants.QRPackageInfoMessageIntegrityCheckID,
+                MsgIntegrity = Constants.PackageInfoMessageIntegrityCheckID,
                 NumberOfParts = dataParts.Length,
                 DataType = dataType,
                 DataHash = dataHash,
                 ObjectID = objectID,
             };
 
-            var qrPackageInfoMessageStr = JsonSerializer.Serialize(qrPackageInfoMessage);
-            return qrPackageInfoMessageStr;
+            var packageInfoMessageStr = JsonSerializer.Serialize(packageInfoMessage);
+            return packageInfoMessageStr;
         }
 
 
-        private static string[] CreateQRDataPartsMessages(string[] dataParts, string objectID)
+        private static string[] CreateDataPartsMessages(string[] dataParts, string objectID)
         {
             var dataPartsMessages = new List<string>();
 
             for (int i = 0; i < dataParts.Length; i++)
             {
-                var qrDataPartsMessage = new QRDataPartMessage
+                var dataPartMessage = new DataPartMessage
                 {
-                    MsgIntegrity = Constants.QRDataPartMessageIntegrityCheckID,
-                    ID = i,
+                    MsgIntegrity = Constants.DataPartMessageIntegrityCheckID,
+                    PartID = i,
                     Data = dataParts[i],
                     DataHash = HashHelper.GetStringHash(dataParts[i]),
                     ObjectID = objectID,
                 };
 
-                var dataPartsMessage = JsonSerializer.Serialize(qrDataPartsMessage);
-                dataPartsMessages.Add(dataPartsMessage);
+                var dataPartMessageStr = JsonSerializer.Serialize(dataPartMessage);
+                dataPartsMessages.Add(dataPartMessageStr);
             }
 
             return dataPartsMessages.ToArray();
-        }
-
-
-        private static IEnumerable<string> SplitStringToChunks(string fullStr, int chunkSize)
-        {
-            var numberOfChunks =
-                fullStr.Length % chunkSize == 0
-                ? fullStr.Length / chunkSize
-                : fullStr.Length / chunkSize + 1;
-
-
-            var chunks =
-                Enumerable.Range(0, numberOfChunks)
-                .Select(chunkNum =>
-                {
-                    int substringSize =
-                        chunkNum * chunkSize + chunkSize > fullStr.Length
-                        ? fullStr.Length % chunkSize
-                        : chunkSize;
-
-                    return fullStr.Substring(chunkNum * chunkSize, substringSize);
-                });
-
-
-            return chunks;
         }
     }
 }

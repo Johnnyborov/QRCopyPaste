@@ -1,6 +1,6 @@
 ﻿namespace ChunkedDataTransfer
 {
-    public class QRPackageInfoMessage
+    internal class PackageInfoMessage
     {
         public string MsgIntegrity { get; set; }
         public int NumberOfParts { get; set; }

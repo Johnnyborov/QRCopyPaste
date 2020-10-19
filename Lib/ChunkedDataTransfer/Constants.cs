@@ -1,11 +1,11 @@
 ﻿namespace ChunkedDataTransfer
 {
-    public static class Constants
+    internal static class Constants
     {
-        public const string QRPackageInfoMessageIntegrityCheckID = "ImCMPNWxUa";
-        public const string QRDataPartMessageIntegrityCheckID = "Ll49e8nyli";
+        internal const string PackageInfoMessageIntegrityCheckID = "ImCMPNWxUa";
+        internal const string DataPartMessageIntegrityCheckID = "Ll49e8nyli";
 
-        public const string StringTypeName = "string";
-        public const string ByteArrayTypeName = "byte[]";
+        internal const string StringTypeName = "string";
+        internal const string ByteArrayTypeName = "byte[]";
     }
 }

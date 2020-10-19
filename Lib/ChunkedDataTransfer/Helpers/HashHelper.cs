@@ -4,9 +4,9 @@ using System.Text;
 
 namespace ChunkedDataTransfer
 {
-    public static class HashHelper
+    internal static class HashHelper
     {
-        public static string GetStringHash(string dataStr)
+        internal static string GetStringHash(string dataStr)
         {
             if (string.IsNullOrEmpty(dataStr))
                 return string.Empty;
